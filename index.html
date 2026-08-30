@@ -426,7 +426,10 @@
         </div>
         <div class="form-group">
             <label for="dPTax" title="Professional Tax u/s 16(iii)">Professional Tax (₹)</label>
-            <input type="number" id="dPTax" value="2400" onchange="calculateComprehensiveTax()">
+            <input type="number" id="dPTax" value="2400" readonly onchange="calculateComprehensiveTax()">
+            <label style="font-weight:400; font-size:9px; display:flex; align-items:center; gap:3px; margin-top:3px; white-space:normal;">
+                <input type="checkbox" id="ptaxAutoMode" checked onchange="onPtaxAutoModeChange()" style="width:auto; margin:0;"> Auto (WB slab, monthly gross)
+            </label>
         </div>
     </div>
 
@@ -792,9 +795,20 @@
         return slabTaxNew;
     }
 
+    function onPtaxAutoModeChange() {
+        const auto = document.getElementById('ptaxAutoMode').checked;
+        document.getElementById('dPTax').readOnly = auto;
+        calculateComprehensiveTax();
+    }
+
     function calculateComprehensiveTax() {
         const salary = parseFloat(document.getElementById('grossSalary').value) || 0;
         const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
+        if (document.getElementById('ptaxAutoMode').checked) {
+            const monthlyGross = salary / 12;
+            const annualPtax = FY_MONTHS.reduce((sum, m) => sum + calcPTaxForMonth(monthlyGross, m), 0);
+            document.getElementById('dPTax').value = annualPtax;
+        }
         const pTax = parseFloat(document.getElementById('dPTax').value) || 0;
         const hblInterestRaw = parseFloat(document.getElementById('dHBLInterest').value) || 0;
         const hblInterestCapped = Math.min(hblInterestRaw, 200000);
