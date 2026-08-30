@@ -242,54 +242,227 @@
             text-align: center;
             padding: 10px 0;
         }
+        .statement-card {
+            margin-top: 16px;
+        }
+        .statement-title {
+            font-weight: bold;
+            font-size: 13px;
+            color: #fff;
+            background-color: #0f2c59;
+            padding: 8px 10px;
+            border-radius: 4px 4px 0 0;
+            text-align: center;
+        }
+        .statement-title.old-title { background-color: #495057; }
+        table.statement-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            border: 1px solid #e1e4e8;
+            border-top: none;
+        }
+        table.statement-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: top;
+        }
+        table.statement-table td:first-child {
+            width: 24px;
+            color: #868e96;
+            white-space: nowrap;
+        }
+        table.statement-table td:last-child {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        table.statement-table tr.stmt-sub td:nth-child(2) {
+            padding-left: 18px;
+            color: #6c757d;
+        }
+        table.statement-table tr.stmt-head td {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            color: #0f2c59;
+        }
+        table.statement-table tr.stmt-total td {
+            font-weight: bold;
+            border-top: 2px solid #dee2e6;
+            border-bottom: none;
+            color: #212529;
+        }
+        table.statement-table tr.stmt-final td {
+            font-weight: bold;
+            color: #dc3545;
+            font-size: 13px;
+        }
+        .statement-note {
+            font-size: 10.5px;
+            color: #868e96;
+            padding: 6px 8px;
+            border: 1px solid #e1e4e8;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+        .decl-block {
+            border: 1px solid #e1e4e8;
+            border-top: none;
+            padding: 10px 12px 14px 12px;
+            font-size: 12px;
+            color: #212529;
+        }
+        .decl-line {
+            display: flex;
+            margin-bottom: 4px;
+        }
+        .decl-line .decl-label {
+            width: 70px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .decl-text {
+            margin: 10px 0 22px 0;
+            line-height: 1.5;
+        }
+        .decl-sig-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .decl-sig-col {
+            width: 46%;
+            text-align: center;
+        }
+        .decl-sig-line {
+            border-top: 1px solid #495057;
+            margin-bottom: 4px;
+            padding-top: 4px;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+        .decl-sig-sub {
+            font-size: 9.5px;
+            color: #868e96;
+        }
+        .print-btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-print {
+            flex: 1;
+            background-color: #495057;
+            color: white;
+            border: none;
+            padding: 9px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-print:hover { background-color: #343a40; }
+        .btn-print.print-new { background-color: #0f2c59; }
+        .btn-print.print-new:hover { background-color: #1d4480; }
+        @media print {
+            body.print-new-regime * { visibility: hidden !important; }
+            body.print-new-regime #statementNewWrap,
+            body.print-new-regime #statementNewWrap * { visibility: visible !important; }
+            body.print-new-regime #statementNewWrap {
+                position: absolute; left: 0; top: 0; width: 100%;
+                box-shadow: none; border: none; margin: 0;
+            }
+            body.print-old-regime * { visibility: hidden !important; }
+            body.print-old-regime #statementOldWrap,
+            body.print-old-regime #statementOldWrap * { visibility: visible !important; }
+            body.print-old-regime #statementOldWrap {
+                position: absolute; left: 0; top: 0; width: 100%;
+                box-shadow: none; border: none; margin: 0;
+            }
+            .btn-print, .btn-calc, .print-btn-row { display: none !important; }
+        }
     </style>
 </head>
 <body>
 
 <div class="calculator-card">
     <h2>Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)</h2>
+
+    <div class="section-title">Employee Details</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="empName" title="Select employee to auto-fill PAN &amp; DOB from staff data">Employee Name</label>
+            <select id="empName" onchange="onEmployeeChange()"></select>
+        </div>
+        <div class="form-group">
+            <label for="empPAN" title="Auto-filled on selecting employee, or type/edit manually">PAN (auto or manual)</label>
+            <input type="text" id="empPAN" placeholder="Auto-filled / type manually" onchange="calculateComprehensiveTax()" style="text-transform:uppercase;">
+        </div>
+        <div class="form-group">
+            <label for="empDOB" title="Auto-filled on selecting employee, or type/edit manually (DD-MM-YYYY)">D.O.B. (auto or manual)</label>
+            <input type="text" id="empDOB" placeholder="DD-MM-YYYY" onchange="calculateComprehensiveTax()">
+        </div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="empDesig" title="Auto-filled on selecting employee, or type/edit manually">Designation (auto or manual)</label>
+            <input type="text" id="empDesig" placeholder="Auto-filled / type manually" onchange="calculateComprehensiveTax()">
+        </div>
+        <div class="form-group">
+            <label for="empNameManual" title="Overrides the dropdown name on the statement/declaration if filled (for staff not in the list)">Employee Name (manual override)</label>
+            <input type="text" id="empNameManual" placeholder="Leave blank to use dropdown name" onchange="calculateComprehensiveTax()">
+        </div>
+    </div>
     
     <div class="section-title">Regular Income & Deductions</div>
     <div class="form-grid">
         <div class="form-group">
             <label for="grossSalary" title="Gross Salary / Pension Income">Gross Salary / Pension (₹)</label>
-            <input type="number" id="grossSalary" value="1000000">
+            <input type="number" id="grossSalary" value="1000000" onchange="calculateComprehensiveTax()">
         </div>
         <div class="form-group">
             <label for="otherIncome" title="Bank Interest / FD Intt / Other Income">Bank / FD Interest (₹)</label>
-            <input type="number" id="otherIncome" value="30000">
+            <input type="number" id="otherIncome" value="30000" onchange="calculateComprehensiveTax()">
         </div>
         <div class="form-group">
-            <label for="oldDeductions" title="Old Regime 80C Deductions (PF, LIC, ELSS, PPF etc. - Max ₹1,50,000)">80C Deductions (₹)</label>
-            <input type="number" id="oldDeductions" value="150000">
+            <label for="dPTax" title="Professional Tax u/s 16(iii)">Professional Tax (₹)</label>
+            <input type="number" id="dPTax" value="2400" onchange="calculateComprehensiveTax()">
         </div>
     </div>
+
+    <div class="section-title">Chapter VI-A Deductions (Old Regime only, as per Excel)</div>
     <div class="form-grid">
-        <div class="form-group">
-            <label for="ptaxDed" title="Professional Tax paid, deductible u/s 16(iii) - Old Regime only">P.Tax Ded (Old) (₹)</label>
-            <input type="number" id="ptaxDed" value="2500" readonly>
-            <label style="font-weight:400; font-size:9px; display:flex; align-items:center; gap:3px; margin-top:3px; white-space:normal;">
-                <input type="checkbox" id="ptaxAutoMode" checked onchange="onPtaxAutoModeChange()" style="width:auto; margin:0;"> Auto (WB slab, monthly gross)
-            </label>
-        </div>
-        <div class="form-group">
-            <label for="hblInterest" title="Housing Building Loan Interest u/s 24(b) - Max ₹2,00,000 - Old Regime only">HBL Intt (Old) (₹)</label>
-            <input type="number" id="hblInterest" value="0">
-        </div>
-        <div class="form-group">
-            <label for="healthInsDed" title="Health Insurance Premium u/s 80D - Max ₹25,000 (₹50,000 if senior citizen) - Old Regime only">Health Ins (Old) (₹)</label>
-            <input type="number" id="healthInsDed" value="0">
-        </div>
+        <div class="form-group"><label for="dGPF">GPF (₹)</label><input type="number" id="dGPF" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dGIS">GIS (₹)</label><input type="number" id="dGIS" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dLIC" title="LICI, Bajaj Allianz etc.">LIC / Insurance (₹)</label><input type="number" id="dLIC" value="0" onchange="calculateComprehensiveTax()"></div>
     </div>
     <div class="form-grid">
-        <div class="form-group">
-            <label for="pensionSchemeDed" title="Pension Scheme / NPS Contribution u/s 80CCD(1B) - Max ₹50,000 - Old Regime only">Pension Scheme (Old) (₹)</label>
-            <input type="number" id="pensionSchemeDed" value="0">
-        </div>
-        <div class="form-group">
-            <label for="otherDedOld" title="Any Other Deduction (Old Regime only)">Oth Ded (Old) (₹)</label>
-            <input type="number" id="otherDedOld" value="0">
-        </div>
+        <div class="form-group"><label for="dHBLPrincipal">HBL Principal (₹)</label><input type="number" id="dHBLPrincipal" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dNSCNew">NSC (New) (₹)</label><input type="number" id="dNSCNew" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dNSCInterest">NSC (Interest) (₹)</label><input type="number" id="dNSCInterest" value="0" onchange="calculateComprehensiveTax()"></div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group"><label for="dPPF">PPF / PLI (₹)</label><input type="number" id="dPPF" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dTuition" title="Tuition Fees for two children">Tuition Fees (₹)</label><input type="number" id="dTuition" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dSukanya">Sukanya Samriddhi (₹)</label><input type="number" id="dSukanya" value="0" onchange="calculateComprehensiveTax()"></div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group"><label for="d80CCD1">80CCD(1) NPS (₹)</label><input type="number" id="d80CCD1" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="d80CCD1B" title="Additional NPS benefit, Max 50,000">80CCD(1B) NPS (₹)</label><input type="number" id="d80CCD1B" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="d80D" title="Mediclaim, Max 25,000">80D Mediclaim (₹)</label><input type="number" id="d80D" value="0" onchange="calculateComprehensiveTax()"></div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group"><label for="d80G" title="Donation to Charitable Org">80G Donation (₹)</label><input type="number" id="d80G" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="d80DD" title="Dependent PH, Max 75,000">80DD Dependent PH (₹)</label><input type="number" id="d80DD" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="d80U" title="PH Employee, Max 75,000">80U PH Employee (₹)</label><input type="number" id="d80U" value="0" onchange="calculateComprehensiveTax()"></div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group"><label for="d80DDB" title="Medical Treatment, Max 40,000">80DDB Medical (₹)</label><input type="number" id="d80DDB" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dHBLInterest" title="Interest on Housing Loan u/s 24(B), Max 2 Lakh">HBL Interest 24(B) (₹)</label><input type="number" id="dHBLInterest" value="0" onchange="calculateComprehensiveTax()"></div>
+        <div class="form-group"><label for="dRelief89" title="Tax Relief u/s 89(1)">Tax Relief u/s 89(1) (₹)</label><input type="number" id="dRelief89" value="0" onchange="calculateComprehensiveTax()"></div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group"><label for="dOther" title="Any other Chapter VI-A deduction not listed above (manual entry)">Other Deduction (Manual) (₹)</label><input type="number" id="dOther" value="0" onchange="calculateComprehensiveTax()"></div>
     </div>
 
     <div class="section-title">Capital Gains & Loss Adjustments</div>
@@ -311,6 +484,7 @@
     <button class="btn-calc" onclick="calculateComprehensiveTax()">Calculate Consolidated Tax Liabilities</button>
     
     <div class="results-grid" id="resultsBlock"></div>
+    <div id="detailedStatements"></div>
 </div>
 
 <div class="calculator-card register-card">
@@ -420,7 +594,11 @@
 
     <div id="entriesTableWrap"></div>
 
-    <div class="res-row total" style="margin-top:10px;">
+    <div class="res-row" style="margin-top:10px;">
+        <span>Total PTax (12 months):</span>
+        <span id="ptaxTotalDisplay">₹0</span>
+    </div>
+    <div class="res-row total">
         <span>Grand Total (12 months):</span>
         <span id="grandTotalDisplay">₹0</span>
     </div>
@@ -428,35 +606,231 @@
 </div>
 
 <script>
-    function onPtaxAutoModeChange() {
-        const auto = document.getElementById('ptaxAutoMode').checked;
-        document.getElementById('ptaxDed').readOnly = auto;
+    const EMPLOYEES = [
+        {name:"PRABIR KUMAR DANGAR", dob:"1969-04-10", pan:"AHGPD9070Q", desig:"HEADMASTER"},
+        {name:"SWAPAN KUMAR MAJI", dob:"1970-11-25", pan:"AKXPM8584E", desig:"ASSISTANT HEADMASTER"},
+        {name:"AMAL CHANDRA SARDAR", dob:"1966-05-12", pan:"AKCPS5925Q", desig:"ASSISTANT TEACHER"},
+        {name:"PARTHA KUMAR PATRA", dob:"1983-06-19", pan:"AUUPP3172G", desig:"ASSISTANT TEACHER"},
+        {name:"MAHIM KUMAR PAINE", dob:"1982-08-02", pan:"BCGPP3004A", desig:"ASSISTANT TEACHER"},
+        {name:"KABITA MANDAL", dob:"1981-04-06", pan:"AZUPM9342G", desig:"ASSISTANT TEACHER"},
+        {name:"TAPAS KUNDU", dob:"1969-09-25", pan:"BIYPK2866F", desig:"ASSISTANT TEACHER"},
+        {name:"MRINMAYEE CHAKRABORTY", dob:"1982-02-18", pan:"AJXPC4923A", desig:"ASSISTANT TEACHER"},
+        {name:"BIDHAN CHANDRA GHOSH", dob:"1983-01-17", pan:"AQBPG6252D", desig:"ASSISTANT TEACHER"},
+        {name:"PARTHA MISHRA", dob:"1990-02-12", pan:"BFIPM2250L", desig:"ASSISTANT TEACHER"},
+        {name:"SAHADEB BASKEY", dob:"1980-11-21", pan:"AKEPB2239A", desig:"ASSISTANT TEACHER"},
+        {name:"TANMOY CHAKRABORTY", dob:"1982-11-02", pan:"AHFPC8555J", desig:"ASSISTANT TEACHER"},
+        {name:"SUJATA MAHATA", dob:"1984-03-30", pan:"BFZPM1105F", desig:"ASSISTANT TEACHER"},
+        {name:"BELA MAHATA", dob:"1974-07-02", pan:"AMRPM0420D", desig:"ASSISTANT TEACHER"},
+        {name:"PAPIYA MAJI", dob:"1991-05-16", pan:"DAQPM3007N", desig:"ASSISTANT TEACHER"},
+        {name:"SUMANTA MANDAL", dob:"1990-12-03", pan:"CRUPM9554J", desig:"ASSISTANT TEACHER"},
+        {name:"SAMPA PATI", dob:"1992-03-26", pan:"COKPP0600M", desig:"ASSISTANT TEACHER"},
+        {name:"SANJOY DANGAR", dob:"1988-05-06", pan:"BAVPD4883N", desig:"ASSISTANT TEACHER"},
+        {name:"ANTARA GHORAI", dob:"1978-12-07", pan:"BCMPS8344C", desig:"ASSISTANT TEACHER"},
+        {name:"MALATI TUDU", dob:"1992-11-16", pan:"AQCPT5082B", desig:"ASSISTANT TEACHER"},
+        {name:"SASANKA SAREN", dob:"1994-02-09", pan:"IFPPS2904B", desig:"ASSISTANT TEACHER"},
+        {name:"SWAPNA MAHANTI", dob:"1978-10-12", pan:"BCVPM2034E", desig:"ASSISTANT TEACHER"},
+        {name:"KANTI MALLA", dob:"1984-04-06", pan:"AXVPM7881P", desig:"ASSISTANT TEACHER"},
+        {name:"SABYASACHI MANDAL", dob:"1982-02-16", pan:"AUAPM5911A", desig:"ASSISTANT TEACHER"},
+        {name:"SHEPHALI MAJI", dob:"1977-11-13", pan:"AHPPM2350M", desig:"ASSISTANT TEACHER"},
+        {name:"DIPTIMAN SAHA", dob:"1980-03-28", pan:"CDPPS3801R", desig:"ASSISTANT TEACHER"},
+        {name:"TUHIN SUBHRA PATRA", dob:"1979-01-14", pan:"BUJPP1772N", desig:"LIBRARIAN"},
+        {name:"SUBHENDU KARMAKAR", dob:"1966-10-07", pan:"BBYPK1058G", desig:"CLERK"},
+        {name:"SUMANTA DULE", dob:"1993-02-02", pan:"EMUPD3676R", desig:"CLERK"},
+        {name:"TAPAN KUMAR DIYASI", dob:"1974-02-25", pan:"BJWPD3889E", desig:"GR D"},
+        {name:"NIRANJAN MURMU", dob:"1976-01-01", pan:"BYUPM6267L", desig:"GR D"},
+        {name:"PRAKASH SARDAR", dob:"1985-07-27", pan:"ERDPS1092G", desig:"LAB ATTENDANT"},
+        {name:"KEYA DEY", dob:"1993-04-28", pan:"BSNPD3883N", desig:"GR D"}
+    ];
+
+    function formatDOB(iso) {
+        const [y, m, d] = iso.split('-');
+        return `${d}-${m}-${y}`;
+    }
+
+    function populateEmployeeOptions() {
+        const select = document.getElementById('empName');
+        select.innerHTML = '<option value="">-- Select Employee --</option>' +
+            EMPLOYEES.map((e, i) => `<option value="${i}">${e.name}</option>`).join('');
+    }
+
+    function onEmployeeChange() {
+        const idx = document.getElementById('empName').value;
+        const panField = document.getElementById('empPAN');
+        const dobField = document.getElementById('empDOB');
+        const desigField = document.getElementById('empDesig');
+        if (idx === '') {
+            panField.value = '';
+            dobField.value = '';
+            desigField.value = '';
+            calculateComprehensiveTax();
+            return;
+        }
+        const emp = EMPLOYEES[parseInt(idx, 10)];
+        panField.value = emp.pan;
+        dobField.value = formatDOB(emp.dob);
+        desigField.value = emp.desig;
         calculateComprehensiveTax();
+    }
+
+    function fmtR(v) {
+        return '₹' + Math.round(v).toLocaleString('en-IN');
+    }
+
+    function stmtRow(sl, label, value, cls) {
+        const valStr = (value === null || value === undefined) ? '' : fmtR(value);
+        return `<tr class="${cls || ''}"><td>${sl || ''}</td><td>${label}</td><td>${valStr}</td></tr>`;
+    }
+
+    function buildRegimeStatement(regimeLabel, titleCls, p, wrapId) {
+        let rows = '';
+        rows += stmtRow('', 'PARTICULARS FOR COMPUTATION OF INCOME TAX FY 2026-27 [' + regimeLabel + ']', null, 'stmt-head');
+        rows += stmtRow(1, 'a) Income from Salaries (Current Employer)', p.salary);
+        rows += stmtRow('', 'b) Income from Salaries (Previous Employer)', 0, 'stmt-sub');
+        rows += stmtRow(2, 'House Rent Allowance (Exempt)', 0);
+        rows += stmtRow(3, 'Gross Salary [1(a+b)-2]', p.salary);
+        rows += stmtRow(4, 'Less: a) Entertainment/Dress Allowance', 0, 'stmt-sub');
+        rows += stmtRow('', 'c) Professional Tax u/s 16(iii)' + (p.isOld ? '' : ' (Not allowed under New Regime)'), p.isOld ? p.pTax : 0, 'stmt-sub');
+        rows += stmtRow(5, `Standard Deduction u/s 16(ia) (Rs.${p.stdDed.toLocaleString('en-IN')})`, p.stdDed);
+        rows += stmtRow(6, 'Income from Head Salaries (3-4-5)', p.incomeHead);
+        rows += stmtRow(7, 'Income from Other Sources (Bank/FD Interest)', p.otherIncome);
+        rows += stmtRow(8, 'Less: Interest payable on H.B. Loan u/s 24(B) (Max 2 Lakh)', p.hblInterestCapped);
+        rows += stmtRow(9, 'Gross Total Income (6+7-8)', p.gti, 'stmt-total');
+        if (p.isOld) {
+            rows += stmtRow(10, 'Deduction under VIA u/s 80C:', null);
+            rows += stmtRow('', 'a) GPF', p.dGPF, 'stmt-sub');
+            rows += stmtRow('', 'b) GIS', p.dGIS, 'stmt-sub');
+            rows += stmtRow('', 'c) LIC / Insurance', p.dLIC, 'stmt-sub');
+            rows += stmtRow('', 'd) HBL Loan (Principal)', p.dHBLPrincipal, 'stmt-sub');
+            rows += stmtRow('', 'e) NSC (New)', p.dNSCNew, 'stmt-sub');
+            rows += stmtRow('', 'f) NSC (Interest)', p.dNSCInterest, 'stmt-sub');
+            rows += stmtRow('', 'g) PPF / PLI', p.dPPF, 'stmt-sub');
+            rows += stmtRow('', 'h) Tuition Fees for two children', p.dTuition, 'stmt-sub');
+            rows += stmtRow('', 'i) Sukanya Samriddhi Yojana', p.dSukanya, 'stmt-sub');
+            rows += stmtRow('', 'j) 80CCD(1)', p.d80CCD1, 'stmt-sub');
+            rows += stmtRow(11, 'Total Deduction u/s 80C,80CCC&80CCD(1) (Max Rs.1.5 Lakh)', p.section80Ccapped);
+            rows += stmtRow(12, 'Other Deduction Chapter VIA:', null);
+            rows += stmtRow('', 'a) 80CCD(1B) - NPS (Max 50,000)', Math.min(p.d80CCD1B, 50000), 'stmt-sub');
+            rows += stmtRow('', 'b) 80D - Mediclaim (Max 25,000)', Math.min(p.d80D, 25000), 'stmt-sub');
+            rows += stmtRow('', 'c) 80G - Donation to Charitable Org', p.d80G, 'stmt-sub');
+            rows += stmtRow('', 'd) 80DD - Dependent PH (Max 75,000)', Math.min(p.d80DD, 75000), 'stmt-sub');
+            rows += stmtRow('', 'e) 80U - PH Employee (Max 75,000)', Math.min(p.d80U, 75000), 'stmt-sub');
+            rows += stmtRow('', 'f) 80DDB - Medical Treatment (Max 40,000)', Math.min(p.d80DDB, 40000), 'stmt-sub');
+            rows += stmtRow('', 'g) Other Deduction (Manual Entry)', p.dOther, 'stmt-sub');
+            rows += stmtRow(13, 'Total Deduction Chapter VIA (11+12)', p.viaTotal, 'stmt-total');
+        } else {
+            rows += stmtRow(10, 'Deduction under VIA u/s 80C, 80CCC, 80D, 80G etc.', null);
+            rows += stmtRow('', 'Not allowed under New Tax Regime', 0, 'stmt-sub');
+            rows += stmtRow(13, 'Total Deduction Chapter VIA (Not Applicable)', 0, 'stmt-total');
+        }
+        rows += stmtRow(14, 'Taxable Income (9-13)', p.taxableIncome, 'stmt-total');
+        rows += stmtRow(15, 'Tax Payable (as per slab)', p.slabTaxFull);
+        rows += stmtRow(16, 'Tax Credit / Rebate / Marginal Relief u/s 87A', p.rebate);
+        rows += stmtRow(17, 'Edn. Cess + Health Cess @ 4%', p.cess);
+        rows += stmtRow(18, 'Total Amount of Tax Payable (15-16+17)', p.totalTaxSalaryOnly, 'stmt-total');
+        rows += stmtRow(19, 'Tax Relief u/s 89(1)', p.relief89);
+        rows += stmtRow(20, 'Balance Tax Payable on Salary Income (18-19)', p.balanceSalaryTax, 'stmt-total');
+        rows += stmtRow('', 'Add: Tax on Capital Gains (STCG @20% + LTCG @12.5%)', p.capGainsTax, 'stmt-sub');
+        rows += stmtRow('', 'GRAND TOTAL TAX PAYABLE (incl. Capital Gains)', p.grandTotal, 'stmt-final');
+
+        const declBlock = `
+            <div class="decl-block">
+                <div class="decl-line"><span class="decl-label">Name</span><span>${p.empName || '—'}</span></div>
+                <div class="decl-line"><span class="decl-label">PAN</span><span>${p.empPAN || '—'}</span></div>
+                <div class="decl-line"><span class="decl-label">D.O.B.</span><span>${p.empDOB || '—'}</span></div>
+                <div class="decl-line"><span class="decl-label">Designation</span><span>${p.empDesig || '—'}</span></div>
+                <div class="decl-text">
+                    I, <strong>${p.empName || '________________________'}</strong>, declare that this statement is true
+                    to the best of my information and belief.
+                </div>
+                <div class="decl-line"><span class="decl-label">Date</span><span>______________________</span></div>
+                <div class="decl-sig-row">
+                    <div class="decl-sig-col">
+                        <div class="decl-sig-line">Signature (Employee)</div>
+                        <div class="decl-sig-sub">${p.empName || ''}${p.empPAN ? ' — ' + p.empPAN : ''}${p.empDOB ? ' — ' + p.empDOB : ''}</div>
+                    </div>
+                    <div class="decl-sig-col">
+                        <div class="decl-sig-line">Checked &amp; Verified by the Head of the Institution</div>
+                        <div class="decl-sig-sub">(With Seal &amp; Sign)</div>
+                    </div>
+                </div>
+            </div>`;
+
+        return `
+        <div class="statement-card" id="${wrapId}">
+            <div class="statement-title ${titleCls}">${regimeLabel} - Detailed Statement (as per Excel Format)</div>
+            <table class="statement-table"><tbody>${rows}</tbody></table>
+            <div class="statement-note">Employee: ${p.empName || '—'} &nbsp;|&nbsp; PAN: ${p.empPAN || '—'} &nbsp;|&nbsp; DOB: ${p.empDOB || '—'} &nbsp;|&nbsp; Desig: ${p.empDesig || '—'}</div>
+            ${declBlock}
+        </div>`;
+    }
+
+    function printStatement(which) {
+        const cls = which === 'new' ? 'print-new-regime' : 'print-old-regime';
+        document.body.classList.add(cls);
+        window.print();
+        setTimeout(() => document.body.classList.remove(cls), 300);
+    }
+    window.addEventListener('afterprint', () => {
+        document.body.classList.remove('print-new-regime', 'print-old-regime');
+    });
+
+    function calculateSlabTaxNew(netSlabIncomeNew) {
+        let slabTaxNew = 0;
+        if (netSlabIncomeNew > 400000) {
+            if (netSlabIncomeNew <= 800000) slabTaxNew += (netSlabIncomeNew - 400000) * 0.05;
+            else { slabTaxNew += 400000 * 0.05; }
+            if (netSlabIncomeNew > 800000 && netSlabIncomeNew <= 1200000) slabTaxNew += (netSlabIncomeNew - 800000) * 0.10;
+            else if (netSlabIncomeNew > 1200000) { slabTaxNew += 400000 * 0.10; }
+            if (netSlabIncomeNew > 1200000 && netSlabIncomeNew <= 1600000) slabTaxNew += (netSlabIncomeNew - 1200000) * 0.15;
+            else if (netSlabIncomeNew > 1600000) { slabTaxNew += 400000 * 0.15; }
+            if (netSlabIncomeNew > 1600000 && netSlabIncomeNew <= 2000000) slabTaxNew += (netSlabIncomeNew - 1600000) * 0.20;
+            else if (netSlabIncomeNew > 2000000) { slabTaxNew += 400000 * 0.20; }
+            if (netSlabIncomeNew > 2000000 && netSlabIncomeNew <= 2400000) slabTaxNew += (netSlabIncomeNew - 2000000) * 0.25;
+            else if (netSlabIncomeNew > 2400000) { slabTaxNew += 400000 * 0.25; }
+            if (netSlabIncomeNew > 2400000) slabTaxNew += (netSlabIncomeNew - 2400000) * 0.30;
+        }
+        return slabTaxNew;
     }
 
     function calculateComprehensiveTax() {
         const salary = parseFloat(document.getElementById('grossSalary').value) || 0;
         const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
+        const pTax = parseFloat(document.getElementById('dPTax').value) || 0;
+        const hblInterestRaw = parseFloat(document.getElementById('dHBLInterest').value) || 0;
+        const hblInterestCapped = Math.min(hblInterestRaw, 200000);
+        const relief89 = parseFloat(document.getElementById('dRelief89').value) || 0;
 
-        if (document.getElementById('ptaxAutoMode').checked) {
-            const monthlyGross = salary / 12;
-            const annualPtax = FY_MONTHS.reduce((sum, m) => sum + calcPTaxForMonth(monthlyGross, m), 0);
-            document.getElementById('ptaxDed').value = annualPtax;
-        }
-        const ded80C = parseFloat(document.getElementById('oldDeductions').value) || 0;
-        const ptaxDed = parseFloat(document.getElementById('ptaxDed').value) || 0;
-        const hblInterestRaw = parseFloat(document.getElementById('hblInterest').value) || 0;
-        const healthInsRaw = parseFloat(document.getElementById('healthInsDed').value) || 0;
-        const pensionSchemeRaw = parseFloat(document.getElementById('pensionSchemeDed').value) || 0;
-        const otherDedOld = parseFloat(document.getElementById('otherDedOld').value) || 0;
+        const dGPF = parseFloat(document.getElementById('dGPF').value) || 0;
+        const dGIS = parseFloat(document.getElementById('dGIS').value) || 0;
+        const dLIC = parseFloat(document.getElementById('dLIC').value) || 0;
+        const dHBLPrincipal = parseFloat(document.getElementById('dHBLPrincipal').value) || 0;
+        const dNSCNew = parseFloat(document.getElementById('dNSCNew').value) || 0;
+        const dNSCInterest = parseFloat(document.getElementById('dNSCInterest').value) || 0;
+        const dPPF = parseFloat(document.getElementById('dPPF').value) || 0;
+        const dTuition = parseFloat(document.getElementById('dTuition').value) || 0;
+        const dSukanya = parseFloat(document.getElementById('dSukanya').value) || 0;
+        const d80CCD1 = parseFloat(document.getElementById('d80CCD1').value) || 0;
+        const d80CCD1B = parseFloat(document.getElementById('d80CCD1B').value) || 0;
+        const d80D = parseFloat(document.getElementById('d80D').value) || 0;
+        const d80G = parseFloat(document.getElementById('d80G').value) || 0;
+        const d80DD = parseFloat(document.getElementById('d80DD').value) || 0;
+        const d80U = parseFloat(document.getElementById('d80U').value) || 0;
+        const d80DDB = parseFloat(document.getElementById('d80DDB').value) || 0;
+        const dOther = parseFloat(document.getElementById('dOther').value) || 0;
 
-        const capped80C = Math.min(ded80C, 150000);
-        const cappedHBLInterest = Math.min(hblInterestRaw, 200000);
-        const cappedHealthIns = Math.min(healthInsRaw, 25000);
-        const cappedPensionScheme = Math.min(pensionSchemeRaw, 50000);
+        const sum80C = dGPF + dGIS + dLIC + dHBLPrincipal + dNSCNew + dNSCInterest + dPPF + dTuition + dSukanya + d80CCD1;
+        const section80Ccapped = Math.min(150000, sum80C);
+        const otherVIA = Math.min(d80D, 25000) + d80G + Math.min(d80DD, 75000) + Math.min(d80U, 75000) + Math.min(d80DDB, 40000) + Math.min(d80CCD1B, 50000) + dOther;
+        const viaTotalOld = section80Ccapped + otherVIA;
 
-        const deductionsOld = capped80C + ptaxDed + cappedHBLInterest + cappedHealthIns + cappedPensionScheme + otherDedOld;
-        
+        const empIdx = document.getElementById('empName').value;
+        const empInfo = empIdx !== '' ? EMPLOYEES[parseInt(empIdx, 10)] : null;
+        const empNameManual = document.getElementById('empNameManual').value.trim();
+        const empName = empNameManual || (empInfo ? empInfo.name : '');
+        const empPAN = document.getElementById('empPAN').value.trim().toUpperCase();
+        const empDOB = document.getElementById('empDOB').value.trim();
+        const empDesig = document.getElementById('empDesig').value.trim();
+
         const rawSTCG = parseFloat(document.getElementById('stcg111a').value) || 0;
         const stclLoss = parseFloat(document.getElementById('stclLoss').value) || 0;
         const rawLTCG = parseFloat(document.getElementById('ltcg112a').value) || 0;
@@ -492,56 +866,57 @@
 
         // New Tax Regime
         const stdDedNew = salary > 0 ? 75000 : 0;
-        const netSlabIncomeNew = Math.max(0, (salary + otherIncome) - stdDedNew);
-        
-        let slabTaxNew = 0;
-        if (netSlabIncomeNew > 400000) {
-            if (netSlabIncomeNew <= 800000) slabTaxNew += (netSlabIncomeNew - 400000) * 0.05;
-            else { slabTaxNew += 400000 * 0.05; }
-            if (netSlabIncomeNew > 800000 && netSlabIncomeNew <= 1200000) slabTaxNew += (netSlabIncomeNew - 800000) * 0.10;
-            else if (netSlabIncomeNew > 1200000) { slabTaxNew += 400000 * 0.10; }
-            if (netSlabIncomeNew > 1200000 && netSlabIncomeNew <= 1600000) slabTaxNew += (netSlabIncomeNew - 1200000) * 0.15;
-            else if (netSlabIncomeNew > 1600000) { slabTaxNew += 400000 * 0.15; }
-            if (netSlabIncomeNew > 1600000 && netSlabIncomeNew <= 2000000) slabTaxNew += (netSlabIncomeNew - 1600000) * 0.20;
-            else if (netSlabIncomeNew > 2000000) { slabTaxNew += 400000 * 0.20; }
-            if (netSlabIncomeNew > 2000000 && netSlabIncomeNew <= 2400000) slabTaxNew += (netSlabIncomeNew - 2000000) * 0.25;
-            else if (netSlabIncomeNew > 2400000) { slabTaxNew += 400000 * 0.25; }
-            if (netSlabIncomeNew > 2400000) slabTaxNew += (netSlabIncomeNew - 2400000) * 0.30;
-        }
+        // Professional Tax u/s 16(iii) is NOT an allowed deduction under the New Tax Regime (Sec 115BAC)
+        const incomeHeadNew = Math.max(0, salary - stdDedNew);
+        const gtiNew = Math.max(0, incomeHeadNew + otherIncome - hblInterestCapped);
+        const netSlabIncomeNew = gtiNew; // Chapter VIA not applicable under New Regime
+        const slabTaxNewFull = calculateSlabTaxNew(netSlabIncomeNew);
 
-        let finalSlabTaxNew = slabTaxNew;
+        let finalSlabTaxNew = slabTaxNewFull;
         if (netSlabIncomeNew <= 1200000) {
             finalSlabTaxNew = 0;
         } else if (netSlabIncomeNew > 1200000 && netSlabIncomeNew < 1275000) {
             let excess = netSlabIncomeNew - 1200000;
-            if (slabTaxNew > excess) finalSlabTaxNew = excess;
+            if (slabTaxNewFull > excess) finalSlabTaxNew = excess;
         }
+        const rebateNew = slabTaxNewFull - finalSlabTaxNew;
+        const cessNew = finalSlabTaxNew * 0.04;
+        const totalTaxSalaryOnlyNew = finalSlabTaxNew + cessNew;
+        const balanceSalaryTaxNew = Math.max(0, totalTaxSalaryOnlyNew - relief89);
 
         const subTotalNew = finalSlabTaxNew + totalCapitalGainsTax;
         const finalTaxWithCessNew = subTotalNew * 1.04;
+        const grandTotalNew = Math.max(0, finalTaxWithCessNew - relief89);
 
         // Old Tax Regime
         const stdDedOld = salary > 0 ? 50000 : 0;
-        const netSlabIncomeOld = Math.max(0, (salary + otherIncome) - stdDedOld - deductionsOld);
+        const incomeHeadOld = Math.max(0, salary - pTax - stdDedOld);
+        const gtiOld = Math.max(0, incomeHeadOld + otherIncome - hblInterestCapped);
+        const netSlabIncomeOld = Math.max(0, gtiOld - viaTotalOld);
 
-        let slabTaxOld = 0;
+        let slabTaxOldFull = 0;
         if (netSlabIncomeOld > 250000) {
-            if (netSlabIncomeOld <= 500000) slabTaxOld += (netSlabIncomeOld - 250000) * 0.05;
-            else { slabTaxOld += 250000 * 0.05; }
-            if (netSlabIncomeOld > 500000 && netSlabIncomeOld <= 1000000) slabTaxOld += (netSlabIncomeOld - 500000) * 0.20;
-            else if (netSlabIncomeOld > 1000000) { slabTaxOld += 500000 * 0.20; }
-            if (netSlabIncomeOld > 1000000) slabTaxOld += (netSlabIncomeOld - 1000000) * 0.30;
+            if (netSlabIncomeOld <= 500000) slabTaxOldFull += (netSlabIncomeOld - 250000) * 0.05;
+            else { slabTaxOldFull += 250000 * 0.05; }
+            if (netSlabIncomeOld > 500000 && netSlabIncomeOld <= 1000000) slabTaxOldFull += (netSlabIncomeOld - 500000) * 0.20;
+            else if (netSlabIncomeOld > 1000000) { slabTaxOldFull += 500000 * 0.20; }
+            if (netSlabIncomeOld > 1000000) slabTaxOldFull += (netSlabIncomeOld - 1000000) * 0.30;
         }
 
-        let finalSlabTaxOld = slabTaxOld;
+        let finalSlabTaxOld = slabTaxOldFull;
         if (netSlabIncomeOld <= 500000) {
             finalSlabTaxOld = 0;
         }
+        const rebateOld = slabTaxOldFull - finalSlabTaxOld;
+        const cessOld = finalSlabTaxOld * 0.04;
+        const totalTaxSalaryOnlyOld = finalSlabTaxOld + cessOld;
+        const balanceSalaryTaxOld = Math.max(0, totalTaxSalaryOnlyOld - relief89);
 
         const subTotalOld = finalSlabTaxOld + totalCapitalGainsTax;
         const finalTaxWithCessOld = subTotalOld * 1.04;
+        const grandTotalOld = Math.max(0, finalTaxWithCessOld - relief89);
 
-        const isNewBetter = finalTaxWithCessNew <= finalTaxWithCessOld;
+        const isNewBetter = grandTotalNew <= grandTotalOld;
 
         document.getElementById('resultsBlock').innerHTML = `
             <div class="regime-box ${isNewBetter ? 'recommended' : ''}">
@@ -552,29 +927,47 @@
                 <div class="res-row sub-title">Adjusted Cap Gains:</div>
                 <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
                 <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
-                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(finalTaxWithCessNew).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalNew).toLocaleString('en-IN')}</span></div>
             </div>
             
             <div class="regime-box ${!isNewBetter ? 'recommended' : ''}">
                 ${!isNewBetter ? '<span class="badge">Tax Saver</span>' : ''}
                 <div class="regime-title">Old Tax Regime</div>
-                <div class="res-row sub-title">Deductions Claimed:</div>
-                <div class="res-row"><span>80C:</span><span>₹${Math.round(capped80C).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span>P.Tax:</span><span>₹${Math.round(ptaxDed).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span>HBL Intt (24b):</span><span>₹${Math.round(cappedHBLInterest).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span>Health Ins (80D):</span><span>₹${Math.round(cappedHealthIns).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span>Pension Scheme:</span><span>₹${Math.round(cappedPensionScheme).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span>Other Ded:</span><span>₹${Math.round(otherDedOld).toLocaleString('en-IN')}</span></div>
-                <div class="res-row"><span><strong>Total Deductions:</strong></span><span><strong>₹${Math.round(deductionsOld).toLocaleString('en-IN')}</strong></span></div>
-                <div class="res-row sub-title">Taxable Slab:</div>
                 <div class="res-row"><span>Taxable Slab:</span><span>₹${Math.round(netSlabIncomeOld).toLocaleString('en-IN')}</span></div>
                 <div class="res-row"><span>Slab Tax:</span><span>₹${Math.round(finalSlabTaxOld).toLocaleString('en-IN')}</span></div>
                 <div class="res-row sub-title">Adjusted Cap Gains:</div>
                 <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
                 <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
-                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(finalTaxWithCessOld).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalOld).toLocaleString('en-IN')}</span></div>
             </div>
         `;
+
+        const paramsNew = {
+            salary, pTax, stdDed: stdDedNew, incomeHead: incomeHeadNew, otherIncome,
+            hblInterestCapped, gti: gtiNew, isOld: false, taxableIncome: netSlabIncomeNew,
+            slabTaxFull: slabTaxNewFull, rebate: rebateNew, cess: cessNew,
+            totalTaxSalaryOnly: totalTaxSalaryOnlyNew, relief89, balanceSalaryTax: balanceSalaryTaxNew,
+            capGainsTax: totalCapitalGainsTax, grandTotal: grandTotalNew,
+            empName, empPAN, empDOB, empDesig
+        };
+        const paramsOld = {
+            salary, pTax, stdDed: stdDedOld, incomeHead: incomeHeadOld, otherIncome,
+            hblInterestCapped, gti: gtiOld, isOld: true, taxableIncome: netSlabIncomeOld,
+            slabTaxFull: slabTaxOldFull, rebate: rebateOld, cess: cessOld,
+            totalTaxSalaryOnly: totalTaxSalaryOnlyOld, relief89, balanceSalaryTax: balanceSalaryTaxOld,
+            capGainsTax: totalCapitalGainsTax, grandTotal: grandTotalOld,
+            empName, empPAN, empDOB, empDesig,
+            dGPF, dGIS, dLIC, dHBLPrincipal, dNSCNew, dNSCInterest, dPPF, dTuition, dSukanya,
+            d80CCD1, d80CCD1B, d80D, d80G, d80DD, d80U, d80DDB, dOther, section80Ccapped, viaTotal: viaTotalOld
+        };
+
+        document.getElementById('detailedStatements').innerHTML =
+            `<div class="print-btn-row">
+                <button class="btn-print print-new" onclick="printStatement('new')">🖨️ Print New Regime Statement</button>
+                <button class="btn-print" onclick="printStatement('old')">🖨️ Print Old Regime Statement</button>
+            </div>` +
+            buildRegimeStatement('NEW TAX REGIME', '', paramsNew, 'statementNewWrap') +
+            buildRegimeStatement('OLD TAX REGIME', 'old-title', paramsOld, 'statementOldWrap');
     }
 
     const FY_LABEL = '2026-27';
@@ -595,28 +988,6 @@
         } else {
             return parseFloat(document.getElementById('daPercentOctFeb').value) || 38;
         }
-    }
-
-    // West Bengal Profession Tax slabs (monthly gross salary based).
-    // Mar-2026 to Sep-2026: earlier slab structure continues.
-    // Oct-2026 onwards: revised slab structure applies.
-    const PTAX_OLD_SLAB_MONTHS = ['Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026', 'Jul-2026', 'Aug-2026', 'Sep-2026'];
-    function calcPTaxForMonth(gross, monthLabel) {
-        const g = parseFloat(gross) || 0;
-        if (PTAX_OLD_SLAB_MONTHS.includes(monthLabel)) {
-            // Slabs effective up to Sep-2026
-            if (g <= 10000) return 0;
-            if (g <= 15000) return 110;
-            if (g <= 25000) return 130;
-            if (g <= 40000) return 150;
-            return 200;
-        }
-        // Slabs effective Oct-2026 onwards
-        if (g <= 20000) return 0;
-        if (g <= 30000) return 100;
-        if (g <= 50000) return 140;
-        if (g <= 100000) return 170;
-        return 208;
     }
 
     function populatePayLevelOptions() {
@@ -743,6 +1114,28 @@
 
     function computeRowTotal(row) {
         return round2((parseFloat(row.basic) || 0) + (parseFloat(row.da) || 0) + (parseFloat(row.hra) || 0) + (parseFloat(row.ma) || 0) + (parseFloat(row.other) || 0));
+    }
+
+    // West Bengal Profession Tax slabs (monthly gross salary based).
+    // Mar-2026 to Sep-2026: earlier slab structure continues.
+    // Oct-2026 onwards: revised slab structure applies.
+    const PTAX_OLD_SLAB_MONTHS = ['Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026', 'Jul-2026', 'Aug-2026', 'Sep-2026'];
+    function calcPTaxForMonth(gross, monthLabel) {
+        const g = parseFloat(gross) || 0;
+        if (PTAX_OLD_SLAB_MONTHS.includes(monthLabel)) {
+            // Slabs effective up to Sep-2026
+            if (g <= 10000) return 0;
+            if (g <= 15000) return 110;
+            if (g <= 25000) return 130;
+            if (g <= 40000) return 150;
+            return 200;
+        }
+        // Slabs effective Oct-2026 onwards
+        if (g <= 20000) return 0;
+        if (g <= 30000) return 100;
+        if (g <= 50000) return 140;
+        if (g <= 100000) return 170;
+        return 208;
     }
 
     function recalcRow(idx) {
@@ -1099,6 +1492,7 @@
         renderEntriesTable();
     }
 
+    populateEmployeeOptions();
     populatePayLevelOptions();
     populatePayStageOptions();
     onLevelStageChange();
