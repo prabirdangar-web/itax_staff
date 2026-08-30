@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income Tax & Capital Gains Calculator FY 2026-27</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 8px;
+        }
+        .calculator-card {
+            max-width: 680px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            padding: 16px;
+            border: 1px solid #e1e4e8;
+            box-sizing: border-box;
+        }
+        h2 {
+            color: #0f2c59;
+            margin-top: 0;
+            text-align: center;
+            font-size: 18px;
+            border-bottom: 2px solid #f1f3f5;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 15px 0 10px 0;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .form-grid {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 0;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 11px;
+            color: #495057;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+            background: #fff;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #0f2c59;
+            box-shadow: 0 0 0 3px rgba(15, 44, 89, 0.1);
+        }
+        input[readonly] {
+            background-color: #f1f3f5;
+            color: #495057;
+        }
+        .btn-calc {
+            background-color: #0f2c59;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 11px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-calc:hover {
+            background-color: #1d4480;
+        }
+        .btn-save {
+            background-color: #28a745;
+        }
+        .btn-save:hover {
+            background-color: #218838;
+        }
+        .results-grid {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        @media (max-width: 520px) {
+            .results-grid { flex-direction: column; }
+        }
+        .regime-box {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            background-color: #fff;
+            position: relative;
+        }
+        .regime-box.recommended {
+            border-color: #28a745;
+            background-color: #f4fbf6;
+        }
+        .badge {
+            background-color: #28a745;
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 3px;
+            position: absolute;
+            top: -9px;
+            right: 10px;
+            font-weight: bold;
+        }
+        .regime-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #212529;
+        }
+        .res-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .res-row.sub-title {
+            font-weight: 600;
+            color: #0f2c59;
+            margin-top: 6px;
+            border-top: 1px solid #f1f3f5;
+            padding-top: 4px;
+        }
+        .res-row.total {
+            border-top: 1px dashed #dee2e6;
+            padding-top: 6px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #212529;
+        }
+        .final-tax { color: #dc3545; }
+        .regime-box.recommended .final-tax { color: #28a745; }
+
+        .calculator-card.register-card { margin-top: 16px; max-width: 980px; }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 14px;
+            border: 1px solid #eef0f2;
+            border-radius: 6px;
+        }
+        .stage-note {
+            display: block;
+            font-size: 9px;
+            color: #868e96;
+            font-weight: normal;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+        .macp-badge {
+            display: inline-block;
+            background-color: #fff3cd;
+            color: #856404;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-left: 3px;
+            white-space: nowrap;
+        }
+        .type-toggle {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .type-toggle label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0;
+        }
+        table.entries-table {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        table.entries-table th, table.entries-table td {
+            padding: 6px 4px;
+            text-align: right;
+            border-bottom: 1px solid #f1f3f5;
+            white-space: nowrap;
+        }
+        table.entries-table th:first-child, table.entries-table td:first-child,
+        table.entries-table th:nth-child(2), table.entries-table td:nth-child(2) {
+            text-align: left;
+        }
+        table.entries-table th {
+            color: #495057;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .btn-del {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .empty-note {
+            font-size: 11px;
+            color: #868e96;
+            text-align: center;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <h2>Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)</h2>
+    
+    <div class="section-title">Regular Income & Deductions</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="grossSalary" title="Gross Salary / Pension Income">Gross Salary / Pension (₹)</label>
+            <input type="number" id="grossSalary" value="1000000">
+        </div>
+        <div class="form-group">
+            <label for="otherIncome" title="Bank Interest / FD Intt / Other Income">Bank / FD Interest (₹)</label>
+            <input type="number" id="otherIncome" value="30000">
+        </div>
+        <div class="form-group">
+            <label for="oldDeductions" title="Old Regime 80C Deductions (PF, LIC, ELSS, PPF etc. - Max ₹1,50,000)">80C Deductions (₹)</label>
+            <input type="number" id="oldDeductions" value="150000">
+        </div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="ptaxDed" title="Professional Tax paid, deductible u/s 16(iii) - Old Regime only">P.Tax Ded (Old) (₹)</label>
+            <input type="number" id="ptaxDed" value="2500" readonly>
+            <label style="font-weight:400; font-size:9px; display:flex; align-items:center; gap:3px; margin-top:3px; white-space:normal;">
+                <input type="checkbox" id="ptaxAutoMode" checked onchange="onPtaxAutoModeChange()" style="width:auto; margin:0;"> Auto (WB slab, monthly gross)
+            </label>
+        </div>
+        <div class="form-group">
+            <label for="hblInterest" title="Housing Building Loan Interest u/s 24(b) - Max ₹2,00,000 - Old Regime only">HBL Intt (Old) (₹)</label>
+            <input type="number" id="hblInterest" value="0">
+        </div>
+        <div class="form-group">
+            <label for="healthInsDed" title="Health Insurance Premium u/s 80D - Max ₹25,000 (₹50,000 if senior citizen) - Old Regime only">Health Ins (Old) (₹)</label>
+            <input type="number" id="healthInsDed" value="0">
+        </div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="pensionSchemeDed" title="Pension Scheme / NPS Contribution u/s 80CCD(1B) - Max ₹50,000 - Old Regime only">Pension Scheme (Old) (₹)</label>
+            <input type="number" id="pensionSchemeDed" value="0">
+        </div>
+        <div class="form-group">
+            <label for="otherDedOld" title="Any Other Deduction (Old Regime only)">Oth Ded (Old) (₹)</label>
+            <input type="number" id="otherDedOld" value="0">
+        </div>
+    </div>
+
+    <div class="section-title">Capital Gains & Loss Adjustments</div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="stcg111a" title="STCG u/s 111A (Gains)">STCG u/s 111A (₹)</label>
+            <input type="number" id="stcg111a" value="50000">
+        </div>
+        <div class="form-group">
+            <label for="stclLoss" title="Short-Term Capital Loss (STCL)">Short-Term Loss STCL (₹)</label>
+            <input type="number" id="stclLoss" value="20000" style="border-color: #e57373;">
+        </div>
+        <div class="form-group">
+            <label for="ltcg112a" title="LTCG u/s 112A (Gains)">LTCG u/s 112A (₹)</label>
+            <input type="number" id="ltcg112a" value="180000">
+        </div>
+    </div>
+    
+    <button class="btn-calc" onclick="calculateComprehensiveTax()">Calculate Consolidated Tax Liabilities</button>
+    
+    <div class="results-grid" id="resultsBlock"></div>
+</div>
+
+<div class="calculator-card register-card">
+    <h2>School Salary / Pension Register (Mar 2026 – Feb 2027)</h2>
+
+    <div class="type-toggle">
+        <label><input type="radio" name="entryType" value="salary" checked onchange="onEntryTypeChange()"> Salary</label>
+        <label><input type="radio" name="entryType" value="pension" onchange="onEntryTypeChange()"> Pension</label>
+        <div id="pensionModeGroup" style="display:none; margin-left: 20px;">
+            <label for="pensionType" style="font-weight:600; font-size:12px;">Pension Type:</label>
+            <select id="pensionType" onchange="onPensionTypeChange()" style="display:inline-block; width:auto; padding:4px 8px;">
+                <option value="ropa19">ROPA-19 Pension (1/2 Basic + DA + MA, No HRA)</option>
+                <option value="old">Pre-ROPA / Old Pension Case (Month-wise Pay Only, No DA/HRA/MA)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section-title" id="settingsSectionTitle">Auto-Fill Settings (ROPA 2019 Pay Matrix &amp; Milestone Rules)</div>
+    
+    <!-- Pre-ROPA Old Pension Specific Inputs (Mar-Sep and Oct-Feb) -->
+    <div class="form-grid" id="oldPensionSettingsGrid" style="display:none;">
+        <div class="form-group">
+            <label for="oldPensionMarSepInput" title="Monthly pension amount for Mar to Sep">Pre-ROPA Pension (Mar–Sep) (₹)</label>
+            <input type="number" id="oldPensionMarSepInput" value="15000" onchange="autoFillAllMonths()">
+        </div>
+        <div class="form-group">
+            <label for="oldPensionOctFebInput" title="Monthly pension amount for Oct to Feb">Pre-ROPA Pension (Oct–Feb) (₹)</label>
+            <input type="number" id="oldPensionOctFebInput" value="15000" onchange="autoFillAllMonths()">
+        </div>
+    </div>
+
+    <div class="form-grid" id="matrixSettingsGrid">
+        <div class="form-group">
+            <label for="payLevel" title="ROPA 2019 Pay Level">Pay Level (ROPA)</label>
+            <select id="payLevel" onchange="onLevelChange()"></select>
+        </div>
+        <div class="form-group">
+            <label for="gradePaySelect" title="Pre-revised Grade Pay (ROPA-19 Mapping)">Pre-revised Grade Pay (₹)</label>
+            <select id="gradePaySelect">
+                <option value="1700">1700</option>
+                <option value="1800">1800</option>
+                <option value="2600">2600</option>
+                <option value="2900">2900</option>
+                <option value="3900">3900</option>
+                <option value="4100" selected>4100</option>
+                <option value="4400">4400</option>
+                <option value="4700">4700</option>
+                <option value="4800">4800</option>
+                <option value="5400">5400</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="payStage" title="Stage & Basic Pay as on March">Stage &amp; Basic (as on Mar)</label>
+            <select id="payStage" onchange="onLevelStageChange()"></select>
+        </div>
+    </div>
+
+    <div class="form-grid" id="allowanceSettingsGrid">
+        <div class="form-group">
+            <label for="daPercentMarSep" title="Default DA % for Mar to Sep">Default DA % (Mar–Sep)</label>
+            <input type="number" id="daPercentMarSep" value="18" step="0.01" onchange="onDefaultDaChange()">
+        </div>
+        <div class="form-group">
+            <label for="daPercentOctFeb" title="Default DA % for Oct to Feb">Default DA % (Oct–Feb)</label>
+            <input type="number" id="daPercentOctFeb" value="38" step="0.01" onchange="onDefaultDaChange()">
+        </div>
+        <div class="form-group">
+            <label for="baseBasic" title="Basic Pay for Mar-Jun">Basic Pay - Mar-Jun (₹)</label>
+            <input type="number" id="baseBasic" readonly>
+        </div>
+        <div class="form-group">
+            <label for="julyBasic" title="Basic Pay from July onward">Basic Pay - Jul onward (₹)</label>
+            <input type="number" id="julyBasic" readonly>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group" id="dojGroup">
+            <label for="dateOfJoining" title="Date of Joining for 10/18/20-year MACP / CAS milestones (fractional date supported)">Date of Joining (optional)</label>
+            <input type="date" id="dateOfJoining">
+        </div>
+        <div class="form-group" id="daModeGroup">
+            <label for="daMode">DA Mode</label>
+            <select id="daMode" onchange="onModeChange()">
+                <option value="percent">% of Basic</option>
+                <option value="manual">Manual Entry</option>
+            </select>
+        </div>
+        <div class="form-group" id="hraModeGroup">
+            <label for="hraMode">HRA Mode</label>
+            <select id="hraMode" onchange="onModeChange()">
+                <option value="fixed">Fixed 12% of Basic (Max ₹12,000)</option>
+                <option value="manual">Manual Entry</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-grid" id="maGroup">
+        <div class="form-group">
+            <label for="maFixed" title="Medical Allowance - fixed">MA - Fixed (₹)</label>
+            <input type="number" id="maFixed" value="500">
+        </div>
+    </div>
+
+    <button class="btn-calc" onclick="autoFillAllMonths()">Auto-Fill All 12 Months (Mar-Feb Cycle)</button>
+    <button class="btn-calc btn-save" onclick="saveAllEntries()">Save All Months</button>
+
+    <div id="entriesTableWrap"></div>
+
+    <div class="res-row total" style="margin-top:10px;">
+        <span>Grand Total (12 months):</span>
+        <span id="grandTotalDisplay">₹0</span>
+    </div>
+    <button class="btn-calc" onclick="syncToCalculator()">Use Grand Total as Gross Salary &amp; Recalculate</button>
+</div>
+
+<script>
+    function onPtaxAutoModeChange() {
+        const auto = document.getElementById('ptaxAutoMode').checked;
+        document.getElementById('ptaxDed').readOnly = auto;
+        calculateComprehensiveTax();
+    }
+
+    function calculateComprehensiveTax() {
+        const salary = parseFloat(document.getElementById('grossSalary').value) || 0;
+        const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
+
+        if (document.getElementById('ptaxAutoMode').checked) {
+            const monthlyGross = salary / 12;
+            const annualPtax = FY_MONTHS.reduce((sum, m) => sum + calcPTaxForMonth(monthlyGross, m), 0);
+            document.getElementById('ptaxDed').value = annualPtax;
+        }
+        const ded80C = parseFloat(document.getElementById('oldDeductions').value) || 0;
+        const ptaxDed = parseFloat(document.getElementById('ptaxDed').value) || 0;
+        const hblInterestRaw = parseFloat(document.getElementById('hblInterest').value) || 0;
+        const healthInsRaw = parseFloat(document.getElementById('healthInsDed').value) || 0;
+        const pensionSchemeRaw = parseFloat(document.getElementById('pensionSchemeDed').value) || 0;
+        const otherDedOld = parseFloat(document.getElementById('otherDedOld').value) || 0;
+
+        const capped80C = Math.min(ded80C, 150000);
+        const cappedHBLInterest = Math.min(hblInterestRaw, 200000);
+        const cappedHealthIns = Math.min(healthInsRaw, 25000);
+        const cappedPensionScheme = Math.min(pensionSchemeRaw, 50000);
+
+        const deductionsOld = capped80C + ptaxDed + cappedHBLInterest + cappedHealthIns + cappedPensionScheme + otherDedOld;
+        
+        const rawSTCG = parseFloat(document.getElementById('stcg111a').value) || 0;
+        const stclLoss = parseFloat(document.getElementById('stclLoss').value) || 0;
+        const rawLTCG = parseFloat(document.getElementById('ltcg112a').value) || 0;
+
+        let netSTCG = 0;
+        let netLTCG = 0;
+        let remainingLoss = stclLoss;
+
+        if (remainingLoss > 0) {
+            if (rawSTCG >= remainingLoss) {
+                netSTCG = rawSTCG - remainingLoss;
+                remainingLoss = 0;
+            } else {
+                netSTCG = 0;
+                remainingLoss = remainingLoss - rawSTCG;
+            }
+        } else { netSTCG = rawSTCG; }
+
+        if (remainingLoss > 0) {
+            if (rawLTCG >= remainingLoss) {
+                netLTCG = rawLTCG - remainingLoss;
+                remainingLoss = 0;
+            } else {
+                netLTCG = 0;
+                remainingLoss = remainingLoss - rawLTCG;
+            }
+        } else { netLTCG = rawLTCG; }
+
+        const taxOnSTCG = netSTCG * 0.20;
+        const taxableLTCG = Math.max(0, netLTCG - 125000); 
+        const taxOnLTCG = taxableLTCG * 0.125;
+        const totalCapitalGainsTax = taxOnSTCG + taxOnLTCG;
+
+        // New Tax Regime
+        const stdDedNew = salary > 0 ? 75000 : 0;
+        const netSlabIncomeNew = Math.max(0, (salary + otherIncome) - stdDedNew);
+        
+        let slabTaxNew = 0;
+        if (netSlabIncomeNew > 400000) {
+            if (netSlabIncomeNew <= 800000) slabTaxNew += (netSlabIncomeNew - 400000) * 0.05;
+            else { slabTaxNew += 400000 * 0.05; }
+            if (netSlabIncomeNew > 800000 && netSlabIncomeNew <= 1200000) slabTaxNew += (netSlabIncomeNew - 800000) * 0.10;
+            else if (netSlabIncomeNew > 1200000) { slabTaxNew += 400000 * 0.10; }
+            if (netSlabIncomeNew > 1200000 && netSlabIncomeNew <= 1600000) slabTaxNew += (netSlabIncomeNew - 1200000) * 0.15;
+            else if (netSlabIncomeNew > 1600000) { slabTaxNew += 400000 * 0.15; }
+            if (netSlabIncomeNew > 1600000 && netSlabIncomeNew <= 2000000) slabTaxNew += (netSlabIncomeNew - 1600000) * 0.20;
+            else if (netSlabIncomeNew > 2000000) { slabTaxNew += 400000 * 0.20; }
+            if (netSlabIncomeNew > 2000000 && netSlabIncomeNew <= 2400000) slabTaxNew += (netSlabIncomeNew - 2000000) * 0.25;
+            else if (netSlabIncomeNew > 2400000) { slabTaxNew += 400000 * 0.25; }
+            if (netSlabIncomeNew > 2400000) slabTaxNew += (netSlabIncomeNew - 2400000) * 0.30;
+        }
+
+        let finalSlabTaxNew = slabTaxNew;
+        if (netSlabIncomeNew <= 1200000) {
+            finalSlabTaxNew = 0;
+        } else if (netSlabIncomeNew > 1200000 && netSlabIncomeNew < 1275000) {
+            let excess = netSlabIncomeNew - 1200000;
+            if (slabTaxNew > excess) finalSlabTaxNew = excess;
+        }
+
+        const subTotalNew = finalSlabTaxNew + totalCapitalGainsTax;
+        const finalTaxWithCessNew = subTotalNew * 1.04;
+
+        // Old Tax Regime
+        const stdDedOld = salary > 0 ? 50000 : 0;
+        const netSlabIncomeOld = Math.max(0, (salary + otherIncome) - stdDedOld - deductionsOld);
+
+        let slabTaxOld = 0;
+        if (netSlabIncomeOld > 250000) {
+            if (netSlabIncomeOld <= 500000) slabTaxOld += (netSlabIncomeOld - 250000) * 0.05;
+            else { slabTaxOld += 250000 * 0.05; }
+            if (netSlabIncomeOld > 500000 && netSlabIncomeOld <= 1000000) slabTaxOld += (netSlabIncomeOld - 500000) * 0.20;
+            else if (netSlabIncomeOld > 1000000) { slabTaxOld += 500000 * 0.20; }
+            if (netSlabIncomeOld > 1000000) slabTaxOld += (netSlabIncomeOld - 1000000) * 0.30;
+        }
+
+        let finalSlabTaxOld = slabTaxOld;
+        if (netSlabIncomeOld <= 500000) {
+            finalSlabTaxOld = 0;
+        }
+
+        const subTotalOld = finalSlabTaxOld + totalCapitalGainsTax;
+        const finalTaxWithCessOld = subTotalOld * 1.04;
+
+        const isNewBetter = finalTaxWithCessNew <= finalTaxWithCessOld;
+
+        document.getElementById('resultsBlock').innerHTML = `
+            <div class="regime-box ${isNewBetter ? 'recommended' : ''}">
+                ${isNewBetter ? '<span class="badge">Tax Saver</span>' : ''}
+                <div class="regime-title">New Tax Regime</div>
+                <div class="res-row"><span>Taxable Slab:</span><span>₹${Math.round(netSlabIncomeNew).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>Slab Tax:</span><span>₹${Math.round(finalSlabTaxNew).toLocaleString('en-IN')}</span></div>
+                <div class="res-row sub-title">Adjusted Cap Gains:</div>
+                <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(finalTaxWithCessNew).toLocaleString('en-IN')}</span></div>
+            </div>
+            
+            <div class="regime-box ${!isNewBetter ? 'recommended' : ''}">
+                ${!isNewBetter ? '<span class="badge">Tax Saver</span>' : ''}
+                <div class="regime-title">Old Tax Regime</div>
+                <div class="res-row sub-title">Deductions Claimed:</div>
+                <div class="res-row"><span>80C:</span><span>₹${Math.round(capped80C).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>P.Tax:</span><span>₹${Math.round(ptaxDed).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>HBL Intt (24b):</span><span>₹${Math.round(cappedHBLInterest).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>Health Ins (80D):</span><span>₹${Math.round(cappedHealthIns).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>Pension Scheme:</span><span>₹${Math.round(cappedPensionScheme).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>Other Ded:</span><span>₹${Math.round(otherDedOld).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span><strong>Total Deductions:</strong></span><span><strong>₹${Math.round(deductionsOld).toLocaleString('en-IN')}</strong></span></div>
+                <div class="res-row sub-title">Taxable Slab:</div>
+                <div class="res-row"><span>Taxable Slab:</span><span>₹${Math.round(netSlabIncomeOld).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>Slab Tax:</span><span>₹${Math.round(finalSlabTaxOld).toLocaleString('en-IN')}</span></div>
+                <div class="res-row sub-title">Adjusted Cap Gains:</div>
+                <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
+                <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(finalTaxWithCessOld).toLocaleString('en-IN')}</span></div>
+            </div>
+        `;
+    }
+
+    const FY_LABEL = '2026-27';
+    const HRA_PERCENT = 12;
+    const HRA_MAX_LIMIT = 12000;
+    const FIXED_MA = 500;
+    const FY_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026','Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
+    const MAR_SEP_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026'];
+    const OCT_FEB_MONTHS = ['Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
+    const JULY_INDEX = 4;
+
+    const PAY_MATRIX = {"1": [17000, 17500, 18000, 18500, 19100, 19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600], "2": [17600, 18100, 18600, 19200, 19800, 20400, 21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200], "3": [18800, 19400, 20000, 20600, 21200, 21800, 22500, 23200, 23900, 24600, 25300, 26100, 26900, 27700, 28500, 29400, 30300, 31200, 32100, 33100, 34100, 35100, 36200, 37300, 38400, 39600, 40800, 42000, 43300, 44600, 45900, 47300, 48700], "4": [19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500], "5": [21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200, 46600, 48000, 49400, 50900, 52400, 54000], "6": [22700, 23400, 24100, 24800, 25500, 26300, 27100, 27900, 28700, 29600, 30500, 31400, 32300, 33300, 34300, 35300, 36400, 37500, 38600, 39800, 41000, 42200, 43500, 44800, 46100, 47500, 48900, 50400, 51900, 53500, 55100, 56800, 58500], "7": [24700, 25400, 26200, 27000, 27800, 28600, 29500, 30400, 31300, 32200, 33200, 34200, 35200, 36300, 37400, 38500, 39700, 40900, 42100, 43400, 44700, 46000, 47400, 48800, 50300, 51800, 53400, 55000, 56700, 58400, 60200, 62000, 63900], "8": [27000, 27800, 28600, 29500, 30400, 31300, 32200, 33200, 34200, 35200, 36300, 37400, 38500, 39700, 40900, 42100, 43400, 44700, 46000, 47400, 48800, 50300, 51800, 53400, 55000, 56700, 58400, 60200, 62000, 63900, 65800, 67800, 69800], "9": [28900, 29800, 30700, 31600, 32500, 33500, 34500, 35500, 36600, 37700, 38800, 40000, 41200, 42400, 43700, 45000, 46400, 47800, 49200, 50700, 52200, 53800, 55400, 57100, 58800, 60600, 62400, 64300, 66200, 68200, 70200, 72300, 74500], "10": [32100, 33100, 34100, 35100, 36200, 37300, 38400, 39600, 40800, 42000, 43300, 44600, 45900, 47300, 48700, 50200, 51700, 53300, 54900, 56500, 58200, 59900, 61700, 63600, 65500, 67500, 69500, 71600, 73700, 75900, 78200, 80500, 82900], "11": [33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500, 52000, 53600, 55200, 56900, 58600, 60400, 62200, 64100, 66000, 68000, 70000, 72100, 74300, 76500, 78800, 81200, 83600, 86100], "12": [35800, 36900, 38000, 39100, 40300, 41500, 42700, 44000, 45300, 46700, 48100, 49500, 51000, 52500, 54100, 55700, 57400, 59100, 60900, 62700, 64600, 66500, 68500, 70600, 72700, 74900, 77100, 79400, 81800, 84300, 86800, 89400, 92100], "14": [39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500, 52000, 53600, 55200, 56900, 58600, 60400, 62200, 64100, 66000, 68000, 70000, 72100, 74300, 76500, 78800, 81200, 83600, 86100, 88700, 91400, 94100, 96900, 99800, 102800], "15": [42600, 43900, 45200, 46600, 48000, 49400, 50900, 52400, 54000, 55600, 57300, 59000, 60800, 62600, 64500, 66400, 68400, 70500, 72600, 74800, 77000, 79300, 81700, 84200, 86700, 89300, 92000, 94800, 97600, 100500, 103500, 106600, 109800], "16": [56100, 57800, 59500, 61300, 63100, 65000, 67000, 69000, 71100, 73200, 75400, 77700, 80000, 82400, 84900, 87400, 90000, 92700, 95500, 98400, 101400, 104400, 107500, 110700, 114000, 117400, 120900, 124500, 128200, 132000, 136000, 140100, 144300]};
+    const PAY_LEVELS = Object.keys(PAY_MATRIX).map(Number).sort((a, b) => a - b);
+
+    function getDefaultDaForMonth(monthLabel) {
+        if (MAR_SEP_MONTHS.includes(monthLabel)) {
+            return parseFloat(document.getElementById('daPercentMarSep').value) || 18;
+        } else {
+            return parseFloat(document.getElementById('daPercentOctFeb').value) || 38;
+        }
+    }
+
+    // West Bengal Profession Tax slabs (monthly gross salary based).
+    // Mar-2026 to Sep-2026: earlier slab structure continues.
+    // Oct-2026 onwards: revised slab structure applies.
+    const PTAX_OLD_SLAB_MONTHS = ['Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026', 'Jul-2026', 'Aug-2026', 'Sep-2026'];
+    function calcPTaxForMonth(gross, monthLabel) {
+        const g = parseFloat(gross) || 0;
+        if (PTAX_OLD_SLAB_MONTHS.includes(monthLabel)) {
+            // Slabs effective up to Sep-2026
+            if (g <= 10000) return 0;
+            if (g <= 15000) return 110;
+            if (g <= 25000) return 130;
+            if (g <= 40000) return 150;
+            return 200;
+        }
+        // Slabs effective Oct-2026 onwards
+        if (g <= 20000) return 0;
+        if (g <= 30000) return 100;
+        if (g <= 50000) return 140;
+        if (g <= 100000) return 170;
+        return 208;
+    }
+
+    function populatePayLevelOptions() {
+        const select = document.getElementById('payLevel');
+        select.innerHTML = PAY_LEVELS.map(l => `<option value="${l}">Level ${l}</option>`).join('');
+    }
+
+    function populatePayStageOptions() {
+        const level = document.getElementById('payLevel').value;
+        const column = PAY_MATRIX[level] || [];
+        const select = document.getElementById('payStage');
+        select.innerHTML = column.map((val, idx) => `<option value="${idx + 1}">Stage ${idx + 1} - ₹${val.toLocaleString('en-IN')}</option>`).join('');
+    }
+
+    function onLevelChange() {
+        populatePayStageOptions();
+        onLevelStageChange();
+    }
+
+    function onLevelStageChange() {
+        const level = document.getElementById('payLevel').value;
+        const stage = parseInt(document.getElementById('payStage').value, 10) || 1;
+        const column = PAY_MATRIX[level] || [];
+        const marBasic = column[stage - 1] ?? 0;
+        const julBasic = column[stage] ?? marBasic;
+        document.getElementById('baseBasic').value = marBasic;
+        document.getElementById('julyBasic').value = julBasic;
+    }
+
+    let monthRows = FY_MONTHS.map(m => ({
+        month: m,
+        type: 'salary',
+        level: null,
+        stage: null,
+        macp: false,
+        basic: 0,
+        daPercent: getDefaultDaForMonth(m),
+        da: 0,
+        manualDA: false,
+        hra: 0,
+        ma: FIXED_MA,
+        other: 0,
+        ptax: 0,
+        manualPtax: false,
+        total: 0,
+        manualTotal: false,
+        id: null
+    }));
+
+    function getSelectedEntryType() {
+        return document.querySelector('input[name="entryType"]:checked').value;
+    }
+
+    function getSelectedPensionType() {
+        return document.getElementById('pensionType').value;
+    }
+
+    function onEntryTypeChange() {
+        const entryType = getSelectedEntryType();
+        const pensionModeGroup = document.getElementById('pensionModeGroup');
+
+        if (entryType === 'pension') {
+            pensionModeGroup.style.display = 'inline-block';
+        } else {
+            pensionModeGroup.style.display = 'none';
+        }
+        updatePensionUI();
+        autoFillAllMonths();
+    }
+
+    function onPensionTypeChange() {
+        updatePensionUI();
+        autoFillAllMonths();
+    }
+
+    function updatePensionUI() {
+        const entryType = getSelectedEntryType();
+        const pType = getSelectedPensionType();
+        const settingsTitle = document.getElementById('settingsSectionTitle');
+        const matrixGrid = document.getElementById('matrixSettingsGrid');
+        const allowanceGrid = document.getElementById('allowanceSettingsGrid');
+        const dojGroup = document.getElementById('dojGroup');
+        const daModeGroup = document.getElementById('daModeGroup');
+        const hraModeGroup = document.getElementById('hraModeGroup');
+        const maGroup = document.getElementById('maGroup');
+        const oldPensionGrid = document.getElementById('oldPensionSettingsGrid');
+
+        if (entryType === 'pension' && pType === 'old') {
+            settingsTitle.style.display = 'block';
+            settingsTitle.textContent = 'Pre-ROPA Pension Settings (Mar–Sep & Oct–Feb)';
+            matrixGrid.style.display = 'none';
+            allowanceGrid.style.display = 'none';
+            dojGroup.style.display = 'none';
+            daModeGroup.style.display = 'none';
+            hraModeGroup.style.display = 'none';
+            maGroup.style.display = 'none';
+            oldPensionGrid.style.display = 'flex';
+        } else if (entryType === 'pension' && pType === 'ropa19') {
+            settingsTitle.style.display = 'block';
+            settingsTitle.textContent = 'Auto-Fill Settings (ROPA 2019 Pay Matrix & Milestone Rules)';
+            matrixGrid.style.display = 'flex';
+            allowanceGrid.style.display = 'flex';
+            dojGroup.style.display = 'block';
+            daModeGroup.style.display = 'block';
+            hraModeGroup.style.display = 'none';
+            maGroup.style.display = 'block';
+            oldPensionGrid.style.display = 'none';
+        } else {
+            settingsTitle.style.display = 'block';
+            settingsTitle.textContent = 'Auto-Fill Settings (ROPA 2019 Pay Matrix & Milestone Rules)';
+            matrixGrid.style.display = 'flex';
+            allowanceGrid.style.display = 'flex';
+            dojGroup.style.display = 'block';
+            daModeGroup.style.display = 'block';
+            hraModeGroup.style.display = 'block';
+            maGroup.style.display = 'block';
+            oldPensionGrid.style.display = 'none';
+        }
+    }
+
+    function round2(n) {
+        return Math.round((n + Number.EPSILON) * 100) / 100;
+    }
+
+    function computeRowTotal(row) {
+        return round2((parseFloat(row.basic) || 0) + (parseFloat(row.da) || 0) + (parseFloat(row.hra) || 0) + (parseFloat(row.ma) || 0) + (parseFloat(row.other) || 0));
+    }
+
+    function recalcRow(idx) {
+        const row = monthRows[idx];
+        const entryType = getSelectedEntryType();
+        const pensionType = getSelectedPensionType();
+        const daMode = document.getElementById('daMode').value;
+        const hraMode = document.getElementById('hraMode').value;
+
+        if (entryType === 'pension' && pensionType === 'old') {
+            row.da = 0;
+            row.hra = 0;
+            row.ma = 0;
+            row.other = 0;
+        } else {
+            if (entryType === 'pension') {
+                row.hra = 0;
+            } else {
+                if (hraMode === 'fixed') {
+                    const rawHra = (parseFloat(row.basic) || 0) * (HRA_PERCENT / 100);
+                    row.hra = round2(Math.min(HRA_MAX_LIMIT, rawHra));
+                }
+            }
+
+            if (daMode === 'percent' && !row.manualDA) {
+                row.da = round2((parseFloat(row.basic) || 0) * ((parseFloat(row.daPercent) || 0) / 100));
+            }
+        }
+
+        if (!row.manualTotal) {
+            row.total = computeRowTotal(row);
+        }
+
+        if (!row.manualPtax) {
+            row.ptax = (entryType === 'pension') ? 0 : calcPTaxForMonth(row.total, row.month);
+        }
+    }
+
+    function onModeChange() {
+        monthRows.forEach((_, idx) => recalcRow(idx));
+        renderEntriesTable();
+    }
+
+    function onDefaultDaChange() {
+        const marSepDa = parseFloat(document.getElementById('daPercentMarSep').value) || 18;
+        const octFebDa = parseFloat(document.getElementById('daPercentOctFeb').value) || 38;
+        monthRows.forEach((row, idx) => {
+            if (!row.manualDA) {
+                row.daPercent = MAR_SEP_MONTHS.includes(row.month) ? marSepDa : octFebDa;
+                recalcRow(idx);
+            }
+        });
+        renderEntriesTable();
+    }
+
+    function monthStartDate(monthLabel) {
+        const MONTH_INDEX = { Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11, Jan: 0, Feb: 1 };
+        const [mon, yr] = monthLabel.split('-');
+        let yearNum = parseInt(yr, 10);
+        if (mon === 'Jan' || mon === 'Feb') {
+            yearNum += 1;
+        }
+        return new Date(yearNum, MONTH_INDEX[mon], 1);
+    }
+
+    function getDaysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    function autoFillAllMonths() {
+        const entryType = getSelectedEntryType();
+        const pensionType = getSelectedPensionType();
+
+        if (entryType === 'pension' && pensionType === 'old') {
+            const marSepVal = parseFloat(document.getElementById('oldPensionMarSepInput').value) || 0;
+            const octFebVal = parseFloat(document.getElementById('oldPensionOctFebInput').value) || 0;
+
+            monthRows.forEach((row, idx) => {
+                row.type = 'pension';
+                row.level = null;
+                row.stage = null;
+                row.macp = false;
+                row.basic = MAR_SEP_MONTHS.includes(row.month) ? marSepVal : octFebVal;
+                row.daPercent = 0;
+                row.da = 0;
+                row.hra = 0;
+                row.ma = 0;
+                row.other = 0;
+                row.manualTotal = false;
+                row.manualDA = false;
+                recalcRow(idx);
+            });
+            renderEntriesTable();
+            return;
+        }
+
+        const baseLevel = parseInt(document.getElementById('payLevel').value, 10);
+        const stage = parseInt(document.getElementById('payStage').value, 10) || 1;
+        const gradePay = parseInt(document.getElementById('gradePaySelect').value, 10);
+        const maFixed = parseFloat(document.getElementById('maFixed').value) || FIXED_MA;
+        const dojStr = document.getElementById('dateOfJoining').value;
+        const doj = dojStr ? new Date(dojStr) : null;
+        const baseLevelIdx = PAY_LEVELS.indexOf(baseLevel);
+
+        const eligible18GradePays = [1700, 2600, 3900, 4100];
+        const allows18YearBenefit = eligible18GradePays.includes(gradePay);
+
+        const milestoneYears = allows18YearBenefit ? [10, 18, 20] : [10, 20];
+        const milestoneDates = doj ? milestoneYears.map(y => {
+            const d = new Date(doj);
+            d.setFullYear(d.getFullYear() + y);
+            return d;
+        }) : [];
+
+        monthRows.forEach((row, idx) => {
+            row.type = entryType;
+            const monthDate = monthStartDate(row.month);
+            const mYear = monthDate.getFullYear();
+            const mMonth = monthDate.getMonth();
+            const totalDays = getDaysInMonth(mYear, mMonth);
+
+            let activeMilestoneDate = null;
+            milestoneDates.forEach(d => {
+                if (d.getFullYear() === mYear && d.getMonth() === mMonth) {
+                    activeMilestoneDate = d;
+                }
+            });
+
+            const monthStage = idx >= JULY_INDEX ? Math.min(33, stage + 1) : stage;
+            const bumpsBefore = milestoneDates.filter(d => d < monthDate).length;
+            const bumpsDuring = activeMilestoneDate ? 1 : 0;
+            const totalBumps = bumpsBefore + bumpsDuring;
+
+            const effLevel = PAY_LEVELS[Math.min(PAY_LEVELS.length - 1, baseLevelIdx + totalBumps)];
+            const column = PAY_MATRIX[effLevel] || [];
+            let standardBasic = column[monthStage - 1] ?? 0;
+
+            if (entryType === 'pension' && pensionType === 'ropa19') {
+                standardBasic = standardBasic / 2;
+            }
+
+            let finalBasic = standardBasic;
+
+            if (activeMilestoneDate) {
+                const dayOfMilestone = activeMilestoneDate.getDate();
+                const daysBefore = dayOfMilestone - 1;
+                const daysFrom = totalDays - daysBefore;
+
+                const prevLevel = PAY_LEVELS[Math.min(PAY_LEVELS.length - 1, baseLevelIdx + bumpsBefore)];
+                const prevColumn = PAY_MATRIX[prevLevel] || [];
+                let basicBefore = prevColumn[monthStage - 1] ?? (standardBasic * (entryType === 'pension' ? 2 : 1));
+                if (entryType === 'pension' && pensionType === 'ropa19') {
+                    basicBefore = basicBefore / 2;
+                }
+
+                finalBasic = round2((basicBefore * daysBefore + standardBasic * daysFrom) / totalDays);
+                row.macp = true;
+            } else {
+                row.macp = doj ? milestoneDates.some(d => d.getFullYear() === mYear && d.getMonth() === mMonth) : false;
+            }
+
+            row.level = effLevel;
+            row.stage = monthStage;
+            row.basic = finalBasic;
+            row.daPercent = getDefaultDaForMonth(row.month);
+            row.ma = maFixed;
+            row.manualTotal = false;
+            row.manualDA = false;
+            recalcRow(idx);
+        });
+        renderEntriesTable();
+    }
+
+    function updateRowField(idx, field, value) {
+        const row = monthRows[idx];
+        row[field] = parseFloat(value) || 0;
+        if (field === 'total') {
+            row.manualTotal = true;
+        } else if (field === 'ptax') {
+            row.manualPtax = true;
+        } else if (field === 'da') {
+            row.manualDA = true;
+        } else if (field === 'daPercent') {
+            row.manualDA = false;
+            const valNum = parseFloat(value) || 0;
+            if (MAR_SEP_MONTHS.includes(row.month)) {
+                document.getElementById('daPercentMarSep').value = valNum;
+                monthRows.forEach((r, i) => {
+                    if (MAR_SEP_MONTHS.includes(r.month)) {
+                        r.daPercent = valNum;
+                        r.manualDA = false;
+                        recalcRow(i);
+                    }
+                });
+            } else if (OCT_FEB_MONTHS.includes(row.month)) {
+                document.getElementById('daPercentOctFeb').value = valNum;
+                monthRows.forEach((r, i) => {
+                    if (OCT_FEB_MONTHS.includes(r.month)) {
+                        r.daPercent = valNum;
+                        r.manualDA = false;
+                        recalcRow(i);
+                    }
+                });
+            }
+        } else if (field === 'basic') {
+            row.manualDA = false;
+        }
+        recalcRow(idx);
+        renderEntriesTable();
+    }
+
+    function toggleManualTotal(idx, checked) {
+        monthRows[idx].manualTotal = checked;
+        if (!checked) recalcRow(idx);
+        renderEntriesTable();
+    }
+
+    function renderEntriesTable() {
+        const wrap = document.getElementById('entriesTableWrap');
+        const entryType = getSelectedEntryType();
+        const pensionType = getSelectedPensionType();
+        const isOldPension = (entryType === 'pension' && pensionType === 'old');
+        const isPension = (entryType === 'pension');
+        let grand = 0;
+        let ptaxGrand = 0;
+
+        wrap.innerHTML = `
+            <div class="table-scroll">
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Month</th>
+                        <th>${isOldPension ? 'Monthly Pay / Pension (₹)' : 'Basic (Level · Stage &amp; Amount)'}</th>
+                        ${!isOldPension ? '<th>DA %</th><th>DA Amt</th>' : ''}
+                        ${!isPension ? '<th>HRA</th>' : ''}
+                        ${!isOldPension ? '<th>MA</th>' : ''}
+                        <th>Other</th>
+                        <th>PTax<span class="stage-note" style="margin-top:0;">(auto)</span></th>
+                        <th>Total</th>
+                        <th>Manual</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${monthRows.map((row, idx) => {
+                        grand += (parseFloat(row.total) || 0);
+                        ptaxGrand += (parseFloat(row.ptax) || 0);
+                        const totalReadonly = row.manualTotal ? '' : 'readonly';
+                        const stageNote = (!isOldPension && row.level !== null && row.stage !== null) ? `<span class="stage-note">Level ${row.level} · Stage ${row.stage}${isPension ? ' (1/2 Basic)' : ''}</span>` : '';
+                        const macpBadge = row.macp ? '<span class="macp-badge" title="Service milestone takes effect this month">MACP</span>' : '';
+                        return `
+                        <tr>
+                            <td style="text-align:left;">${row.month}${idx >= JULY_INDEX && !isOldPension ? ' <span title="Increment applies">*</span>' : ''}${macpBadge}</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <input type="number" value="${row.basic}" style="width:95px; font-weight:600;" onchange="updateRowField(${idx},'basic',this.value)">
+                                </div>
+                                ${stageNote}
+                            </td>
+                            ${!isOldPension ? `
+                            <td><input type="number" value="${row.daPercent}" style="width:48px;" step="0.01" onchange="updateRowField(${idx},'daPercent',this.value)" title="DA % for this month (Mar-Sep or Oct-Feb group)">%</td>
+                            <td><input type="number" value="${row.da}" style="width:75px;" onchange="updateRowField(${idx},'da',this.value)"></td>
+                            ` : ''}
+                            ${!isPension ? `
+                            <td><input type="number" value="${row.hra}" style="width:75px;" onchange="updateRowField(${idx},'hra',this.value)"></td>
+                            ` : ''}
+                            ${!isOldPension ? `
+                            <td><input type="number" value="${row.ma}" style="width:65px;" onchange="updateRowField(${idx},'ma',this.value)"></td>
+                            ` : ''}
+                            <td><input type="number" value="${row.other}" style="width:65px;" onchange="updateRowField(${idx},'other',this.value)"></td>
+                            <td><input type="number" value="${row.ptax}" style="width:60px;" title="Auto from West Bengal PT slabs based on this month's gross; edit to override" onchange="updateRowField(${idx},'ptax',this.value)"></td>
+                            <td><input type="number" value="${row.total}" style="width:85px; font-weight:bold;" ${totalReadonly} onchange="updateRowField(${idx},'total',this.value)"></td>
+                            <td style="text-align:center;"><input type="checkbox" ${row.manualTotal ? 'checked' : ''} onchange="toggleManualTotal(${idx}, this.checked)"></td>
+                            <td>${row.id ? `<button class="btn-del" onclick="deleteEntry(${idx})" title="Delete saved entry">&times;</button>` : ''}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+            </div>
+            <div class="empty-note">
+                ${isOldPension ? 'Pre-ROPA / Old Pension Case mode: Set Mar–Sep and Oct–Feb amounts above to automatically fetch them into the table.' : (isPension ? 'ROPA-19 Pension mode: Basic is automatically calculated as 1/2 of Pay Matrix Basic, plus DA and MA (No HRA).' : 'Changing DA% in any month from Mar to Sep automatically updates all Mar–Sep months. Changing DA% in Oct–Feb updates all Oct–Feb months.')}
+            </div>
+        `;
+        document.getElementById('grandTotalDisplay').textContent = '₹' + Math.round(grand).toLocaleString('en-IN');
+        document.getElementById('ptaxTotalDisplay').textContent = '₹' + Math.round(ptaxGrand).toLocaleString('en-IN');
+    }
+
+    function syncToCalculator() {
+        let grand = 0;
+        monthRows.forEach(r => { grand += (parseFloat(r.total) || 0); });
+        document.getElementById('grossSalary').value = Math.round(grand);
+        calculateComprehensiveTax();
+        document.getElementById('grossSalary').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function loadEntries() {
+        try {
+            const res = await fetch(`/api/salary-entries?financialYear=${FY_LABEL}`);
+            const rows = await res.json();
+            if (Array.isArray(rows)) {
+                rows.forEach(r => {
+                    const idx = FY_MONTHS.indexOf(r.monthLabel);
+                    if (idx === -1) return;
+                    monthRows[idx] = {
+                        month: r.monthLabel,
+                        type: r.entryType || 'salary',
+                        basic: Number(r.basicPay) || 0,
+                        daPercent: r.daPercent || getDefaultDaForMonth(r.monthLabel),
+                        da: Number(r.da) || 0,
+                        hra: Number(r.hraAmount) || 0,
+                        ma: Number(r.ma) || FIXED_MA,
+                        other: Number(r.otherAllowance) || 0,
+                        total: Number(r.grossTotal) || 0,
+                        manualTotal: true,
+                        id: r.id
+                    };
+                });
+            }
+        } catch (e) {
+            // Local register active
+        }
+        renderEntriesTable();
+    }
+
+    async function saveAllEntries() {
+        for (const row of monthRows) {
+            const payload = {
+                entryType: row.type,
+                financialYear: FY_LABEL,
+                monthLabel: row.month,
+                basicPay: row.basic,
+                daPercent: row.daPercent,
+                da: row.da,
+                hraAmount: row.hra,
+                ma: row.ma,
+                otherAllowance: row.other,
+                grossTotal: row.total,
+            };
+            await fetch('/api/salary-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        }
+        await loadEntries();
+    }
+
+    async function deleteEntry(idx) {
+        const row = monthRows[idx];
+        if (row.id) {
+            await fetch(`/api/salary-entries?id=${row.id}`, { method: 'DELETE' });
+        }
+        monthRows[idx] = { month: row.month, type: getSelectedEntryType(), basic: 0, daPercent: getDefaultDaForMonth(row.month), da: 0, hra: 0, ma: FIXED_MA, other: 0, total: 0, manualTotal: false, id: null };
+        renderEntriesTable();
+    }
+
+    populatePayLevelOptions();
+    populatePayStageOptions();
+    onLevelStageChange();
+    autoFillAllMonths();
+    loadEntries();
+
+    calculateComprehensiveTax();
+</script>
+
+</body>
+</html>
