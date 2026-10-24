@@ -397,6 +397,15 @@
         </div>
     </div>
 
+    <div class="section-title">Salary Portal Access (Firebase Login)</div>
+    <div id="portalAuthOut" class="form-grid">
+        <div class="form-group"><label for="portalEmail">Admin Email</label><input type="email" id="portalEmail" placeholder="Admin email" autocomplete="username"></div>
+        <div class="form-group"><label for="portalPass">Password</label><input type="password" id="portalPass" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')portalLogin()"></div>
+        <div class="form-group" style="flex:0 0 90px;"><label>&nbsp;</label><button class="btn-calc" style="margin-top:0;padding:8px;" onclick="portalLogin()">Login</button></div>
+    </div>
+    <div id="portalAuthIn" style="display:none;font-size:12px;margin-bottom:10px;">✅ Logged in as <b id="portalAuthUser"></b> <button class="btn-del" style="margin-left:10px;" onclick="portalLogout()">Logout</button></div>
+    <div id="portalAuthMsg" style="color:#b91c1c;font-size:11px;"></div>
+
     <div class="section-title">Employee Details</div>
     <div class="form-grid">
         <div class="form-group">
@@ -621,9 +630,10 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
     // ===== Salary Portal (Firebase project tfhs-portal) — read-only fetch =====
-    let portalDb = null;
+    let portalDb = null, portalAuth = null;
     try {
         firebase.initializeApp({
             apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
@@ -634,11 +644,29 @@
             appId: "1:316041012204:web:c0b52bc796c5ac173716c9"
         });
         portalDb = firebase.firestore();
+        portalAuth = firebase.auth();
     } catch (e) { console.error('Firebase init failed', e); }
 
     const PORTAL_MONTH_FULL = { Jan:'January', Feb:'February', Mar:'March', Apr:'April', May:'May', Jun:'June', Jul:'July', Aug:'August', Sep:'September', Oct:'October', Nov:'November', Dec:'December' };
     const PORTAL_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const PORTAL_DEFAULT_CFG = { da: 18, hraMode: 'individual', hraMax: 12000, ma: 500, ptaxMode: 'auto' };
+
+    function portalLogin() {
+        const st = document.getElementById('portalAuthMsg');
+        const email = document.getElementById('portalEmail').value.trim();
+        const pass = document.getElementById('portalPass').value;
+        st.textContent = '';
+        if (!portalAuth) { st.textContent = 'Firebase not available.'; return; }
+        portalAuth.signInWithEmailAndPassword(email, pass).then(() => {
+            document.getElementById('portalPass').value = '';
+        }).catch(() => { st.textContent = 'Login failed: incorrect email or password.'; });
+    }
+    function portalLogout() { if (portalAuth) portalAuth.signOut(); }
+    if (portalAuth) portalAuth.onAuthStateChanged(u => {
+        document.getElementById('portalAuthOut').style.display = u ? 'none' : '';
+        document.getElementById('portalAuthIn').style.display = u ? '' : 'none';
+        document.getElementById('portalAuthUser').textContent = u ? u.email : '';
+    });
 
     function portalMonthKey(label) { const [m, y] = label.split('-'); return PORTAL_MONTH_FULL[m] + '-' + y; }
     function portalMonthIdx(key) { const [m, y] = key.split('-'); return parseInt(y, 10) * 12 + PORTAL_MONTH_NAMES.indexOf(m); }
@@ -685,7 +713,11 @@
         try {
             const snap = await portalDb.collection('tfhs').doc('salaryPortal').get();
             data = snap.exists ? snap.data() : null;
-        } catch (e) { st.textContent = 'Could not reach the Salary Portal: ' + e.message; return; }
+        } catch (e) {
+            if (e && e.code === 'permission-denied') st.textContent = '🔒 Permission denied by the Salary Portal. Please log in with the admin email & password in the "Salary Portal Access" box above, then click Fetch again.';
+            else st.textContent = 'Could not reach the Salary Portal: ' + e.message;
+            return;
+        }
         if (!data || !data.months) { st.textContent = 'No salary data found in the Salary Portal.'; return; }
         const configs = data.configs || {};
         const fetched = [], missing = [];
