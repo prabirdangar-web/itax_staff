@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Income Tax & Capital Gains Calculator FY 2026-27</title>
+    <title>Income Tax & Capital Gains Calculator FY 2025-26 / 2026-27</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -386,7 +386,16 @@
 <body>
 
 <div class="calculator-card">
-    <h2>Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)</h2>
+    <h2 id="mainTitle">Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)</h2>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="fySelect" title="Financial year for salary register, Professional Tax and tax statement">Financial Year</label>
+            <select id="fySelect" onchange="setFY(this.value)">
+                <option value="2026-27" selected>FY 2026-27 (AY 2027-28)</option>
+                <option value="2025-26">FY 2025-26 (AY 2026-27)</option>
+            </select>
+        </div>
+    </div>
 
     <div class="section-title">Employee Details</div>
     <div class="form-grid">
@@ -422,7 +431,7 @@
         </div>
         <div class="form-group">
             <label for="otherIncome" title="Bank Interest / FD Intt / Other Income">Bank / FD Interest (₹)</label>
-            <input type="number" id="otherIncome" value="30000" onchange="calculateComprehensiveTax()">
+            <input type="number" id="otherIncome" value="" placeholder="Leave blank if nil" onchange="calculateComprehensiveTax()">
         </div>
         <div class="form-group">
             <label for="dPTax" title="Professional Tax u/s 16(iii)">Professional Tax (₹)</label>
@@ -472,15 +481,15 @@
     <div class="form-grid">
         <div class="form-group">
             <label for="stcg111a" title="STCG u/s 111A (Gains)">STCG u/s 111A (₹)</label>
-            <input type="number" id="stcg111a" value="50000">
+            <input type="number" id="stcg111a" value="" placeholder="Leave blank if nil" onchange="calculateComprehensiveTax()">
         </div>
         <div class="form-group">
             <label for="stclLoss" title="Short-Term Capital Loss (STCL)">Short-Term Loss STCL (₹)</label>
-            <input type="number" id="stclLoss" value="20000" style="border-color: #e57373;">
+            <input type="number" id="stclLoss" value="" placeholder="Leave blank if nil" onchange="calculateComprehensiveTax()" style="border-color: #e57373;">
         </div>
         <div class="form-group">
             <label for="ltcg112a" title="LTCG u/s 112A (Gains)">LTCG u/s 112A (₹)</label>
-            <input type="number" id="ltcg112a" value="180000">
+            <input type="number" id="ltcg112a" value="" placeholder="Leave blank if nil" onchange="calculateComprehensiveTax()">
         </div>
     </div>
     
@@ -491,7 +500,7 @@
 </div>
 
 <div class="calculator-card register-card">
-    <h2>School Salary / Pension Register (Mar 2026 – Feb 2027)</h2>
+    <h2 id="regTitle">School Salary / Pension Register (Mar 2026 – Feb 2027)</h2>
 
     <div class="type-toggle">
         <label><input type="radio" name="entryType" value="salary" checked onchange="onEntryTypeChange()"> Salary</label>
@@ -686,7 +695,7 @@
 
     function buildRegimeStatement(regimeLabel, titleCls, p, wrapId) {
         let rows = '';
-        rows += stmtRow('', 'PARTICULARS FOR COMPUTATION OF INCOME TAX FY 2026-27 [' + regimeLabel + ']', null, 'stmt-head');
+        rows += stmtRow('', 'PARTICULARS FOR COMPUTATION OF INCOME TAX FY ' + FY_LABEL + ' [' + regimeLabel + ']', null, 'stmt-head');
         rows += stmtRow(1, 'a) Income from Salaries (Current Employer)', p.salary);
         rows += stmtRow('', 'b) Income from Salaries (Previous Employer)', 0, 'stmt-sub');
         rows += stmtRow(2, 'House Rent Allowance (Exempt)', 0);
@@ -984,13 +993,13 @@
             buildRegimeStatement('OLD TAX REGIME', 'old-title', paramsOld, 'statementOldWrap');
     }
 
-    const FY_LABEL = '2026-27';
+    let FY_LABEL = '2026-27';
     const HRA_PERCENT = 12;
     const HRA_MAX_LIMIT = 12000;
     const FIXED_MA = 500;
-    const FY_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026','Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
-    const MAR_SEP_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026'];
-    const OCT_FEB_MONTHS = ['Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
+    let FY_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026','Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
+    let MAR_SEP_MONTHS = ['Mar-2026','Apr-2026','May-2026','Jun-2026','Jul-2026','Aug-2026','Sep-2026'];
+    let OCT_FEB_MONTHS = ['Oct-2026','Nov-2026','Dec-2026','Jan-2027','Feb-2027'];
     const JULY_INDEX = 4;
 
     const PAY_MATRIX = {"1": [17000, 17500, 18000, 18500, 19100, 19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600], "2": [17600, 18100, 18600, 19200, 19800, 20400, 21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200], "3": [18800, 19400, 20000, 20600, 21200, 21800, 22500, 23200, 23900, 24600, 25300, 26100, 26900, 27700, 28500, 29400, 30300, 31200, 32100, 33100, 34100, 35100, 36200, 37300, 38400, 39600, 40800, 42000, 43300, 44600, 45900, 47300, 48700], "4": [19700, 20300, 20900, 21500, 22100, 22800, 23500, 24200, 24900, 25600, 26400, 27200, 28000, 28800, 29700, 30600, 31500, 32400, 33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500], "5": [21000, 21600, 22200, 22900, 23600, 24300, 25000, 25800, 26600, 27400, 28200, 29000, 29900, 30800, 31700, 32700, 33700, 34700, 35700, 36800, 37900, 39000, 40200, 41400, 42600, 43900, 45200, 46600, 48000, 49400, 50900, 52400, 54000], "6": [22700, 23400, 24100, 24800, 25500, 26300, 27100, 27900, 28700, 29600, 30500, 31400, 32300, 33300, 34300, 35300, 36400, 37500, 38600, 39800, 41000, 42200, 43500, 44800, 46100, 47500, 48900, 50400, 51900, 53500, 55100, 56800, 58500], "7": [24700, 25400, 26200, 27000, 27800, 28600, 29500, 30400, 31300, 32200, 33200, 34200, 35200, 36300, 37400, 38500, 39700, 40900, 42100, 43400, 44700, 46000, 47400, 48800, 50300, 51800, 53400, 55000, 56700, 58400, 60200, 62000, 63900], "8": [27000, 27800, 28600, 29500, 30400, 31300, 32200, 33200, 34200, 35200, 36300, 37400, 38500, 39700, 40900, 42100, 43400, 44700, 46000, 47400, 48800, 50300, 51800, 53400, 55000, 56700, 58400, 60200, 62000, 63900, 65800, 67800, 69800], "9": [28900, 29800, 30700, 31600, 32500, 33500, 34500, 35500, 36600, 37700, 38800, 40000, 41200, 42400, 43700, 45000, 46400, 47800, 49200, 50700, 52200, 53800, 55400, 57100, 58800, 60600, 62400, 64300, 66200, 68200, 70200, 72300, 74500], "10": [32100, 33100, 34100, 35100, 36200, 37300, 38400, 39600, 40800, 42000, 43300, 44600, 45900, 47300, 48700, 50200, 51700, 53300, 54900, 56500, 58200, 59900, 61700, 63600, 65500, 67500, 69500, 71600, 73700, 75900, 78200, 80500, 82900], "11": [33400, 34400, 35400, 36500, 37600, 38700, 39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500, 52000, 53600, 55200, 56900, 58600, 60400, 62200, 64100, 66000, 68000, 70000, 72100, 74300, 76500, 78800, 81200, 83600, 86100], "12": [35800, 36900, 38000, 39100, 40300, 41500, 42700, 44000, 45300, 46700, 48100, 49500, 51000, 52500, 54100, 55700, 57400, 59100, 60900, 62700, 64600, 66500, 68500, 70600, 72700, 74900, 77100, 79400, 81800, 84300, 86800, 89400, 92100], "14": [39900, 41100, 42300, 43600, 44900, 46200, 47600, 49000, 50500, 52000, 53600, 55200, 56900, 58600, 60400, 62200, 64100, 66000, 68000, 70000, 72100, 74300, 76500, 78800, 81200, 83600, 86100, 88700, 91400, 94100, 96900, 99800, 102800], "15": [42600, 43900, 45200, 46600, 48000, 49400, 50900, 52400, 54000, 55600, 57300, 59000, 60800, 62600, 64500, 66400, 68400, 70500, 72600, 74800, 77000, 79300, 81700, 84200, 86700, 89300, 92000, 94800, 97600, 100500, 103500, 106600, 109800], "16": [56100, 57800, 59500, 61300, 63100, 65000, 67000, 69000, 71100, 73200, 75400, 77700, 80000, 82400, 84900, 87400, 90000, 92700, 95500, 98400, 101400, 104400, 107500, 110700, 114000, 117400, 120900, 124500, 128200, 132000, 136000, 140100, 144300]};
@@ -1133,7 +1142,7 @@
     // West Bengal Profession Tax slabs (monthly gross salary based).
     // Mar-2026 to Sep-2026: earlier slab structure continues.
     // Oct-2026 onwards: revised slab structure applies.
-    const PTAX_OLD_SLAB_MONTHS = ['Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026', 'Jul-2026', 'Aug-2026', 'Sep-2026'];
+    let PTAX_OLD_SLAB_MONTHS = ['Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026', 'Jul-2026', 'Aug-2026', 'Sep-2026'];
     function calcPTaxForMonth(gross, monthLabel) {
         const g = parseFloat(gross) || 0;
         if (PTAX_OLD_SLAB_MONTHS.includes(monthLabel)) {
@@ -1209,9 +1218,6 @@
         const MONTH_INDEX = { Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11, Jan: 0, Feb: 1 };
         const [mon, yr] = monthLabel.split('-');
         let yearNum = parseInt(yr, 10);
-        if (mon === 'Jan' || mon === 'Feb') {
-            yearNum += 1;
-        }
         return new Date(yearNum, MONTH_INDEX[mon], 1);
     }
 
@@ -1504,6 +1510,24 @@
         }
         monthRows[idx] = { month: row.month, type: getSelectedEntryType(), basic: 0, daPercent: getDefaultDaForMonth(row.month), da: 0, hra: 0, ma: FIXED_MA, other: 0, total: 0, manualTotal: false, id: null };
         renderEntriesTable();
+    }
+
+    function setFY(fy) {
+        const a = parseInt(fy.slice(0, 4), 10);
+        const names = ['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'];
+        FY_LABEL = fy;
+        FY_MONTHS = names.map(m => m + '-' + ((m === 'Jan' || m === 'Feb') ? a + 1 : a));
+        MAR_SEP_MONTHS = FY_MONTHS.slice(0, 7);
+        OCT_FEB_MONTHS = FY_MONTHS.slice(7);
+        // WB Prof. Tax: revised slab applies from Oct-2026; FY 2025-26 uses the earlier slab all year
+        PTAX_OLD_SLAB_MONTHS = fy === '2025-26' ? FY_MONTHS.slice() : FY_MONTHS.slice(0, 7);
+        if (fy === '2025-26') document.getElementById('daPercentOctFeb').value = document.getElementById('daPercentMarSep').value;
+        else document.getElementById('daPercentOctFeb').value = 38;
+        document.getElementById('mainTitle').textContent = 'Income Tax & Capital Gains Calculator (FY ' + fy + ' / AY ' + (a + 1) + '-' + String(a + 2).slice(2) + ')';
+        document.getElementById('regTitle').textContent = 'School Salary / Pension Register (Mar ' + a + ' – Feb ' + (a + 1) + ')';
+        autoFillAllMonths();
+        loadEntries();
+        calculateComprehensiveTax();
     }
 
     populateEmployeeOptions();
