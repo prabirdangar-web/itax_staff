@@ -715,12 +715,13 @@
         const card = document.getElementById('fetchedCard');
         if (!show) { card.style.display = 'none'; return; }
         const f = v => Math.round(v).toLocaleString('en-IN');
-        let t = {basic:0,da:0,hra:0,ma:0,other:0,total:0,ptax:0,gpf:0,itax:0}, nProj = 0, nRet = 0;
+        let t = {basic:0,da:0,hra:0,ma:0,other:0,total:0,ptax:0,gpf:0,itax:0}, nProj = 0, nRet = 0, nAbs = 0;
         const body = monthRows.map(r => {
             const proj = !!r.projected; if (proj) nProj++;
             if (r.retired) nRet++;
+            if (r.absent) nAbs++;
             t.basic += +r.basic||0; t.da += +r.da||0; t.hra += +r.hra||0; t.ma += +r.ma||0; t.other += +r.other||0; t.total += +r.total||0; t.ptax += +r.ptax||0; t.gpf += +r.gpf||0; t.itax += +r.itaxPortal||0;
-            return `<tr style="${r.retired ? 'color:#adb5bd;' : proj ? 'background:#fffbea;' : ''}"><td style="text-align:left;">${r.month}</td><td>${f(r.basic)}</td><td>${f(r.da)}</td><td>${f(r.hra)}</td><td>${f(r.ma)}</td><td>${f(r.other)}</td><td style="font-weight:bold;">${f(r.total)}</td><td>${f(r.ptax)}</td><td>${f(r.gpf||0)}</td><td style="color:#975a16;font-weight:bold;">${f(r.itaxPortal||0)}</td><td style="text-align:center;">${r.retired ? '<span style="color:#868e96;font-weight:bold;">RETIRED</span>' : proj ? '<span class="macp-badge">PROJECTED</span>' : '<span style="color:#28a745;font-weight:bold;">✔ Portal</span>'}</td></tr>`;
+            return `<tr style="${(r.retired || r.absent) ? 'color:#adb5bd;' : proj ? 'background:#fffbea;' : ''}"><td style="text-align:left;">${r.month}</td><td>${f(r.basic)}</td><td>${f(r.da)}</td><td>${f(r.hra)}</td><td>${f(r.ma)}</td><td>${f(r.other)}</td><td style="font-weight:bold;">${f(r.total)}</td><td>${f(r.ptax)}</td><td>${f(r.gpf||0)}</td><td style="color:#975a16;font-weight:bold;">${f(r.itaxPortal||0)}</td><td style="text-align:center;">${r.absent ? '<span style="color:#868e96;font-weight:bold;">NOT IN SERVICE</span>' : r.retired ? '<span style="color:#868e96;font-weight:bold;">RETIRED</span>' : proj ? '<span class="macp-badge">PROJECTED</span>' : '<span style="color:#28a745;font-weight:bold;">✔ Portal</span>'}</td></tr>`;
         }).join('');
         document.getElementById('fetchedTableWrap').innerHTML = `
             <div class="table-scroll"><table class="entries-table" style="min-width:700px;">
@@ -728,7 +729,7 @@
             <tbody>${body}
             <tr style="font-weight:bold;border-top:2px solid #dee2e6;"><td style="text-align:left;">TOTAL (12 months)</td><td>${f(t.basic)}</td><td>${f(t.da)}</td><td>${f(t.hra)}</td><td>${f(t.ma)}</td><td>${f(t.other)}</td><td>${f(t.total)}</td><td>${f(t.ptax)}</td><td>${f(t.gpf)}</td><td style="color:#975a16;">${f(t.itax)}</td><td></td></tr>
             </tbody></table></div>
-            <div class="empty-note" style="text-align:left;">${nRet ? '🏁 Retired — no salary after the retirement month (' + nRet + ' month(s) nil). ' : ''}${nProj ? '⚠ ' + nProj + ' month(s) not available in the portal are PROJECTED from the nearest fetched month (no bonus/arrear). Income tax below is for the full year (actual + projected).' : 'All 12 months fetched from the Salary Portal. Income tax below is for the full year.'}</div>`;
+            <div class="empty-note" style="text-align:left;">${nAbs ? '🚫 Name not found in the portal for ' + nAbs + ' month(s) — treated as service discontinued / transferred (nil, not projected). ' : ''}${nRet ? '🏁 Retired — no salary after the retirement month (' + nRet + ' month(s) nil). ' : ''}${nProj ? '⚠ ' + nProj + ' month(s) not available in the portal are PROJECTED from the nearest fetched month (no bonus/arrear). Income tax below is for the full year (actual + projected).' : 'All 12 months fetched from the Salary Portal. Income tax below is for the full year.'}</div>`;
         document.getElementById('fetchedTitle').textContent = 'Salary Statement — ' + (document.getElementById('empNameManual').value.trim() || (document.getElementById('empName').value !== '' ? EMPLOYEES[parseInt(document.getElementById('empName').value,10)].name : '')) + ' (FY ' + FY_LABEL + ')';
         card.style.display = '';
     }
@@ -771,7 +772,7 @@
         });
         const foundLabels = FY_MONTHS.filter(l => found[l]);
         if (!foundLabels.length) {
-            st.textContent = 'No salary records for "' + (name || pan) + '" in ' + FY_LABEL + ' found in the Salary Portal.';
+            st.textContent = 'No salary record for "' + (name || pan) + '" in any saved month of ' + FY_LABEL + ' in the Salary Portal — treated as service discontinued / transferred (nothing fetched or projected). Enter income manually if needed.';
             renderFetchedTable(false);
             itaxPaid = null; calculateComprehensiveTax();
             return;
@@ -782,17 +783,30 @@
         foundLabels.forEach(l => { if (found[l].dor) dorISO = found[l].dor; });
         if (!dorISO) dorISO = RETIRE_FALLBACK[name] || null;
         const dorIdx = dorISO ? parseInt(dorISO.slice(0, 4), 10) * 12 + (parseInt(dorISO.slice(5, 7), 10) - 1) : null;
-        let gpfTotal = 0;
+        let gpfTotal = 0, lastSavedStatus = null;
         FY_MONTHS.forEach((label, i) => {
             const key = portalMonthKey(label);
             const cfg = portalConfigFor(configs, key);
             let emp = found[label], isProj = false;
+            const savedMonth = Array.isArray(data.months[key]);
+            const absentNow = !emp && (savedMonth || lastSavedStatus === 'absent') && !(dorIdx !== null && portalMonthIdx(key) > dorIdx);
+            if (savedMonth) lastSavedStatus = emp ? 'found' : 'absent';
+            if (absentNow) {
+                // Month is saved in the portal but the name is not there (or the last saved month already lacked it):
+                // service discontinued / transferred / not yet joined -> nil, never projected.
+                const ra = monthRows[i];
+                ra.type = 'salary';
+                ra.basic = 0; ra.da = 0; ra.hra = 0; ra.ma = 0; ra.other = 0; ra.ptax = 0; ra.total = 0;
+                ra.manualDA = true; ra.manualPtax = true; ra.manualTotal = true; ra.macp = false;
+                ra.projected = false; ra.retired = false; ra.absent = true; ra.gpf = 0; ra.itaxPortal = 0;
+                return;
+            }
             if (!emp && dorIdx !== null && portalMonthIdx(key) > dorIdx) {
                 const rr = monthRows[i];
                 rr.type = 'salary';
                 rr.basic = 0; rr.da = 0; rr.hra = 0; rr.ma = 0; rr.other = 0; rr.ptax = 0; rr.total = 0;
                 rr.manualDA = true; rr.manualPtax = true; rr.manualTotal = true; rr.macp = false;
-                rr.projected = false; rr.retired = true; rr.gpf = 0; rr.itaxPortal = 0;
+                rr.projected = false; rr.absent = false; rr.retired = true; rr.gpf = 0; rr.itaxPortal = 0;
                 return;
             }
             if (!emp) {
@@ -809,7 +823,7 @@
             row.daPercent = parseFloat(cfg.da) || row.daPercent;
             row.ptax = c.ptax; row.total = round2(c.gross);
             row.manualDA = true; row.manualPtax = true; row.manualTotal = true; row.macp = false;
-            row.projected = isProj; row.retired = false; row.gpf = c.gpf; row.itaxPortal = c.itax;
+            row.projected = isProj; row.retired = false; row.absent = false; row.gpf = c.gpf; row.itaxPortal = c.itax;
             gpfTotal += c.gpf;
             (isProj ? projected : fetched).push(label);
         });
