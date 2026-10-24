@@ -386,7 +386,9 @@
 <body>
 
 <div class="calculator-card">
-    <h2 id="mainTitle">Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)</h2>
+    <h2 id="mainTitle" style="position:relative;padding-right:46px;">Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)
+        <button id="topFetchBtn" onclick="fetchFromSalaryPortal(false, true)" title="Fetch salary from Salary Portal (refresh)" style="position:absolute;right:0;top:-4px;width:36px;height:36px;border:none;border-radius:50%;background:#b7791f;color:#fff;font-size:18px;cursor:pointer;">☁</button>
+    </h2>
     <div class="form-grid">
         <div class="form-group">
             <label for="fySelect" title="Financial year for salary register, Professional Tax and tax statement">Financial Year</label>
@@ -666,6 +668,7 @@
         document.getElementById('portalAuthOut').style.display = u ? 'none' : '';
         document.getElementById('portalAuthIn').style.display = u ? '' : 'none';
         document.getElementById('portalAuthUser').textContent = u ? u.email : '';
+        if (u) { portalDataCache = null; portalAutoFetch(); }
     });
 
     function portalMonthKey(label) { const [m, y] = label.split('-'); return PORTAL_MONTH_FULL[m] + '-' + y; }
@@ -700,19 +703,24 @@
         return { basic, da, hra, ma, other: addl + bonus + arrear, gross, ptax, gpf: parseFloat(emp.gpf) || 0, itax: (parseFloat(emp.itax) || 0) + (parseFloat(emp.addlItax) || 0) };
     }
 
-    async function fetchFromSalaryPortal() {
+    let portalDataCache = null;
+    function portalAutoFetch() { fetchFromSalaryPortal(true, false); }
+    async function fetchFromSalaryPortal(silent, force) {
         const st = document.getElementById('portalFetchStatus');
         if (!portalDb) { st.textContent = 'Cloud connection is not available.'; return; }
         const idx = document.getElementById('empName').value;
         const manual = document.getElementById('empNameManual').value.trim();
         const name = (manual || (idx !== '' ? EMPLOYEES[parseInt(idx, 10)].name : '')).toUpperCase().replace(/\s+/g, ' ');
         const pan = document.getElementById('empPAN').value.trim().toUpperCase();
-        if (!name && !pan) { st.textContent = 'Please select an employee (or enter name / PAN) first.'; return; }
+        if (!name && !pan) { if (!silent) st.textContent = 'Please select an employee (or enter name / PAN) first.'; return; }
         st.textContent = 'Fetching from Salary Portal…';
         let data;
         try {
-            const snap = await portalDb.collection('tfhs').doc('salaryPortal').get();
-            data = snap.exists ? snap.data() : null;
+            if (!portalDataCache || force) {
+                const snap = await portalDb.collection('tfhs').doc('salaryPortal').get();
+                portalDataCache = snap.exists ? snap.data() : null;
+            }
+            data = portalDataCache;
         } catch (e) {
             if (e && e.code === 'permission-denied') st.textContent = '🔒 Permission denied by the Salary Portal. Please log in with the admin email & password in the "Salary Portal Access" box above, then click Fetch again.';
             else st.textContent = 'Could not reach the Salary Portal: ' + e.message;
@@ -823,6 +831,7 @@
         dobField.value = formatDOB(emp.dob);
         desigField.value = emp.desig;
         calculateComprehensiveTax();
+        portalAutoFetch();
     }
 
     function fmtR(v) {
@@ -1669,6 +1678,7 @@
         autoFillAllMonths();
         loadEntries();
         calculateComprehensiveTax();
+        portalAutoFetch();
     }
 
     populateEmployeeOptions();
@@ -1679,6 +1689,7 @@
     loadEntries();
 
     calculateComprehensiveTax();
+    portalAutoFetch();
 </script>
 
 </body>
