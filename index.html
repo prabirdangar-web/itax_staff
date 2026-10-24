@@ -715,23 +715,24 @@
         const card = document.getElementById('fetchedCard');
         if (!show) { card.style.display = 'none'; return; }
         const f = v => Math.round(v).toLocaleString('en-IN');
-        let t = {basic:0,da:0,hra:0,ma:0,other:0,total:0,ptax:0,gpf:0}, nProj = 0;
+        let t = {basic:0,da:0,hra:0,ma:0,other:0,total:0,ptax:0,gpf:0,itax:0}, nProj = 0;
         const body = monthRows.map(r => {
             const proj = !!r.projected; if (proj) nProj++;
-            t.basic += +r.basic||0; t.da += +r.da||0; t.hra += +r.hra||0; t.ma += +r.ma||0; t.other += +r.other||0; t.total += +r.total||0; t.ptax += +r.ptax||0; t.gpf += +r.gpf||0;
-            return `<tr style="${proj ? 'background:#fffbea;' : ''}"><td style="text-align:left;">${r.month}</td><td>${f(r.basic)}</td><td>${f(r.da)}</td><td>${f(r.hra)}</td><td>${f(r.ma)}</td><td>${f(r.other)}</td><td style="font-weight:bold;">${f(r.total)}</td><td>${f(r.ptax)}</td><td>${f(r.gpf||0)}</td><td style="text-align:center;">${proj ? '<span class="macp-badge">PROJECTED</span>' : '<span style="color:#28a745;font-weight:bold;">✔ Portal</span>'}</td></tr>`;
+            t.basic += +r.basic||0; t.da += +r.da||0; t.hra += +r.hra||0; t.ma += +r.ma||0; t.other += +r.other||0; t.total += +r.total||0; t.ptax += +r.ptax||0; t.gpf += +r.gpf||0; t.itax += +r.itaxPortal||0;
+            return `<tr style="${proj ? 'background:#fffbea;' : ''}"><td style="text-align:left;">${r.month}</td><td>${f(r.basic)}</td><td>${f(r.da)}</td><td>${f(r.hra)}</td><td>${f(r.ma)}</td><td>${f(r.other)}</td><td style="font-weight:bold;">${f(r.total)}</td><td>${f(r.ptax)}</td><td>${f(r.gpf||0)}</td><td style="color:#975a16;font-weight:bold;">${f(r.itaxPortal||0)}</td><td style="text-align:center;">${proj ? '<span class="macp-badge">PROJECTED</span>' : '<span style="color:#28a745;font-weight:bold;">✔ Portal</span>'}</td></tr>`;
         }).join('');
         document.getElementById('fetchedTableWrap').innerHTML = `
             <div class="table-scroll"><table class="entries-table" style="min-width:700px;">
-            <thead><tr><th style="text-align:left;">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>MA</th><th>Other</th><th>Gross</th><th>P.Tax</th><th>GPF</th><th>Source</th></tr></thead>
+            <thead><tr><th style="text-align:left;">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>MA</th><th>Other</th><th>Gross</th><th>P.Tax</th><th>GPF</th><th>I.Tax (TDS)</th><th>Source</th></tr></thead>
             <tbody>${body}
-            <tr style="font-weight:bold;border-top:2px solid #dee2e6;"><td style="text-align:left;">TOTAL (12 months)</td><td>${f(t.basic)}</td><td>${f(t.da)}</td><td>${f(t.hra)}</td><td>${f(t.ma)}</td><td>${f(t.other)}</td><td>${f(t.total)}</td><td>${f(t.ptax)}</td><td>${f(t.gpf)}</td><td></td></tr>
+            <tr style="font-weight:bold;border-top:2px solid #dee2e6;"><td style="text-align:left;">TOTAL (12 months)</td><td>${f(t.basic)}</td><td>${f(t.da)}</td><td>${f(t.hra)}</td><td>${f(t.ma)}</td><td>${f(t.other)}</td><td>${f(t.total)}</td><td>${f(t.ptax)}</td><td>${f(t.gpf)}</td><td style="color:#975a16;">${f(t.itax)}</td><td></td></tr>
             </tbody></table></div>
             <div class="empty-note" style="text-align:left;">${nProj ? '⚠ ' + nProj + ' month(s) not available in the portal are PROJECTED from the nearest fetched month (no bonus/arrear). Income tax below is for the full year (actual + projected).' : 'All 12 months fetched from the Salary Portal. Income tax below is for the full year.'}</div>`;
         document.getElementById('fetchedTitle').textContent = 'Salary Statement — ' + (document.getElementById('empNameManual').value.trim() || (document.getElementById('empName').value !== '' ? EMPLOYEES[parseInt(document.getElementById('empName').value,10)].name : '')) + ' (FY ' + FY_LABEL + ')';
         card.style.display = '';
     }
 
+    let itaxPaid = null;   // total I.Tax (TDS) deducted per Salary Portal for the FY; null = not fetched
     let portalDataCache = null;
     function portalAutoFetch() { fetchFromSalaryPortal(true, false); }
     async function fetchFromSalaryPortal(silent, force) {
@@ -771,6 +772,7 @@
         if (!foundLabels.length) {
             st.textContent = 'No salary records for "' + (name || pan) + '" in ' + FY_LABEL + ' found in the Salary Portal.';
             renderFetchedTable(false);
+            itaxPaid = null; calculateComprehensiveTax();
             return;
         }
         let gpfTotal = 0;
@@ -805,6 +807,7 @@
         document.getElementById('ptaxAutoMode').checked = false;
         document.getElementById('dPTax').readOnly = false;
         document.getElementById('dPTax').value = monthRows.reduce((s, r) => s + (parseFloat(r.ptax) || 0), 0);
+        itaxPaid = monthRows.reduce((s, r) => s + (parseFloat(r.itaxPortal) || 0), 0);
         syncToCalculator(true);
         renderFetchedTable(true);
         st.innerHTML = '✔ Fetched <b>' + fetched.length + '</b> month(s) from portal' + (projected.length ? ' · <b style="color:#b7791f;">' + projected.length + ' month(s) projected</b>: ' + projected.join(', ') : '') + '. Full-year gross and income tax are generated below.';
@@ -937,6 +940,11 @@
         rows += stmtRow(20, 'Balance Tax Payable on Salary Income (18-19)', p.balanceSalaryTax, 'stmt-total');
         rows += stmtRow('', 'Add: Tax on Capital Gains (STCG @20% + LTCG @12.5%)', p.capGainsTax, 'stmt-sub');
         rows += stmtRow('', 'GRAND TOTAL TAX PAYABLE (incl. Capital Gains)', p.grandTotal, 'stmt-final');
+        if (itaxPaid !== null) {
+            rows += stmtRow('', 'Less: I.Tax already deducted at source (12 months, per Salary Portal)', itaxPaid, 'stmt-sub');
+            const dueAmt = Math.round(p.grandTotal) - Math.round(itaxPaid);
+            rows += stmtRow('', dueAmt >= 0 ? 'BALANCE TAX DUE' : 'EXCESS TAX DEDUCTED (REFUND)', Math.abs(dueAmt), 'stmt-final');
+        }
 
         const declBlock = `
             <div class="decl-block">
@@ -1002,6 +1010,14 @@
         const auto = document.getElementById('ptaxAutoMode').checked;
         document.getElementById('dPTax').readOnly = auto;
         calculateComprehensiveTax();
+    }
+
+    // I.Tax deducted (from Salary Portal) vs tax payable -> balance due / refund
+    function dueRows(total) {
+        if (itaxPaid === null) return '';
+        const due = Math.round(total) - Math.round(itaxPaid);
+        return `<div class="res-row"><span>I.Tax deducted (portal):</span><span>₹${Math.round(itaxPaid).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>${due >= 0 ? 'Tax Due (Balance):' : 'Refund / Excess:'}</span><span class="final-tax">₹${Math.abs(due).toLocaleString('en-IN')}</span></div>`;
     }
 
     function calculateComprehensiveTax() {
@@ -1144,7 +1160,7 @@
                 <div class="res-row sub-title">Adjusted Cap Gains:</div>
                 <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
                 <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
-                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalNew).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalNew).toLocaleString('en-IN')}</span></div>${dueRows(grandTotalNew)}
             </div>
             
             <div class="regime-box ${!isNewBetter ? 'recommended' : ''}">
@@ -1155,7 +1171,7 @@
                 <div class="res-row sub-title">Adjusted Cap Gains:</div>
                 <div class="res-row"><span>STCG (20%):</span><span>₹${Math.round(taxOnSTCG).toLocaleString('en-IN')}</span></div>
                 <div class="res-row"><span>LTCG (12.5%):</span><span>₹${Math.round(taxOnLTCG).toLocaleString('en-IN')}</span></div>
-                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalOld).toLocaleString('en-IN')}</span></div>
+                <div class="res-row total"><span>Total Tax:</span><span class="final-tax">₹${Math.round(grandTotalOld).toLocaleString('en-IN')}</span></div>${dueRows(grandTotalOld)}
             </div>
         `;
 
