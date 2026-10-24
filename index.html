@@ -385,6 +385,11 @@
 </head>
 <body>
 
+<div class="calculator-card register-card" id="fetchedCard" style="display:none; margin-top:0; margin-bottom:16px;">
+    <h2 id="fetchedTitle">Salary Statement</h2>
+    <div id="fetchedTableWrap"></div>
+</div>
+
 <div class="calculator-card">
     <h2 id="mainTitle" style="position:relative;padding-right:46px;">Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)
         <button id="topFetchBtn" onclick="fetchFromSalaryPortal(false, true)" title="Fetch salary from Salary Portal (refresh)" style="position:absolute;right:0;top:-4px;width:36px;height:36px;border:none;border-radius:50%;background:#b7791f;color:#fff;font-size:18px;cursor:pointer;">☁</button>
@@ -513,6 +518,7 @@
 <div class="calculator-card register-card">
     <h2 id="regTitle">School Salary / Pension Register (Mar 2026 – Feb 2027)</h2>
 
+    <details id="manualRegisterOpts"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#495057;margin:6px 0 10px;">⚙ Manual / Auto-fill settings (optional — not needed when salary is fetched from portal)</summary>
     <div class="type-toggle">
         <label><input type="radio" name="entryType" value="salary" checked onchange="onEntryTypeChange()"> Salary</label>
         <label><input type="radio" name="entryType" value="pension" onchange="onEntryTypeChange()"> Pension</label>
@@ -614,6 +620,7 @@
 
     <button class="btn-calc" onclick="autoFillAllMonths()">Auto-Fill All 12 Months (Mar-Feb Cycle)</button>
     <button class="btn-calc btn-save" onclick="saveAllEntries()">Save All Months</button>
+    </details>
 
     <div id="entriesTableWrap"></div>
 
@@ -703,6 +710,28 @@
         return { basic, da, hra, ma, other: addl + bonus + arrear, gross, ptax, gpf: parseFloat(emp.gpf) || 0, itax: (parseFloat(emp.itax) || 0) + (parseFloat(emp.addlItax) || 0) };
     }
 
+
+    function renderFetchedTable(show) {
+        const card = document.getElementById('fetchedCard');
+        if (!show) { card.style.display = 'none'; return; }
+        const f = v => Math.round(v).toLocaleString('en-IN');
+        let t = {basic:0,da:0,hra:0,ma:0,other:0,total:0,ptax:0,gpf:0}, nProj = 0;
+        const body = monthRows.map(r => {
+            const proj = !!r.projected; if (proj) nProj++;
+            t.basic += +r.basic||0; t.da += +r.da||0; t.hra += +r.hra||0; t.ma += +r.ma||0; t.other += +r.other||0; t.total += +r.total||0; t.ptax += +r.ptax||0; t.gpf += +r.gpf||0;
+            return `<tr style="${proj ? 'background:#fffbea;' : ''}"><td style="text-align:left;">${r.month}</td><td>${f(r.basic)}</td><td>${f(r.da)}</td><td>${f(r.hra)}</td><td>${f(r.ma)}</td><td>${f(r.other)}</td><td style="font-weight:bold;">${f(r.total)}</td><td>${f(r.ptax)}</td><td>${f(r.gpf||0)}</td><td style="text-align:center;">${proj ? '<span class="macp-badge">PROJECTED</span>' : '<span style="color:#28a745;font-weight:bold;">✔ Portal</span>'}</td></tr>`;
+        }).join('');
+        document.getElementById('fetchedTableWrap').innerHTML = `
+            <div class="table-scroll"><table class="entries-table" style="min-width:700px;">
+            <thead><tr><th style="text-align:left;">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>MA</th><th>Other</th><th>Gross</th><th>P.Tax</th><th>GPF</th><th>Source</th></tr></thead>
+            <tbody>${body}
+            <tr style="font-weight:bold;border-top:2px solid #dee2e6;"><td style="text-align:left;">TOTAL (12 months)</td><td>${f(t.basic)}</td><td>${f(t.da)}</td><td>${f(t.hra)}</td><td>${f(t.ma)}</td><td>${f(t.other)}</td><td>${f(t.total)}</td><td>${f(t.ptax)}</td><td>${f(t.gpf)}</td><td></td></tr>
+            </tbody></table></div>
+            <div class="empty-note" style="text-align:left;">${nProj ? '⚠ ' + nProj + ' month(s) not available in the portal are PROJECTED from the nearest fetched month (no bonus/arrear). Income tax below is for the full year (actual + projected).' : 'All 12 months fetched from the Salary Portal. Income tax below is for the full year.'}</div>`;
+        document.getElementById('fetchedTitle').textContent = 'Salary Statement — ' + (document.getElementById('empNameManual').value.trim() || (document.getElementById('empName').value !== '' ? EMPLOYEES[parseInt(document.getElementById('empName').value,10)].name : '')) + ' (FY ' + FY_LABEL + ')';
+        card.style.display = '';
+    }
+
     let portalDataCache = null;
     function portalAutoFetch() { fetchFromSalaryPortal(true, false); }
     async function fetchFromSalaryPortal(silent, force) {
@@ -728,42 +757,57 @@
         }
         if (!data || !data.months) { st.textContent = 'No salary data found in the Salary Portal.'; return; }
         const configs = data.configs || {};
-        const fetched = [], missing = [];
-        let gpfTotal = 0;
-        FY_MONTHS.forEach((label, i) => {
-            const key = portalMonthKey(label);
-            const staff = data.months[key];
-            if (!Array.isArray(staff)) { missing.push(label); return; }
+        const fetched = [], projected = [];
+        const found = {};   // label -> raw portal employee record
+        FY_MONTHS.forEach((label) => {
+            const staff = data.months[portalMonthKey(label)];
+            if (!Array.isArray(staff)) return;
             // Match by name first (PAN lists differ between the two apps), then PAN.
             let emp = staff.find(e => (e.name || '').toUpperCase().replace(/\s+/g, ' ') === name);
             if (!emp && pan) emp = staff.find(e => (e.pan || '').toUpperCase() === pan);
-            if (!emp) { missing.push(label); return; }
-            const c = portalCalc(emp, portalConfigFor(configs, key), key);
+            if (emp && (parseFloat(emp.basic) || 0) > 0) found[label] = emp;
+        });
+        const foundLabels = FY_MONTHS.filter(l => found[l]);
+        if (!foundLabels.length) {
+            st.textContent = 'No salary records for "' + (name || pan) + '" in ' + FY_LABEL + ' found in the Salary Portal.';
+            renderFetchedTable(false);
+            return;
+        }
+        let gpfTotal = 0;
+        FY_MONTHS.forEach((label, i) => {
+            const key = portalMonthKey(label);
+            const cfg = portalConfigFor(configs, key);
+            let emp = found[label], isProj = false;
+            if (!emp) {
+                // Blank month: project from the nearest earlier fetched month (else the earliest later one), without one-time bonus/arrear.
+                const earlier = foundLabels.filter(l => FY_MONTHS.indexOf(l) < i);
+                const src = earlier.length ? earlier[earlier.length - 1] : foundLabels[0];
+                emp = Object.assign({}, found[src], { bonus: 0, arrear: 0, addlPtax: 0, addlItax: 0 });
+                isProj = true;
+            }
+            const c = portalCalc(emp, cfg, key);
             const row = monthRows[i];
             row.type = 'salary';
             row.basic = c.basic; row.da = c.da; row.hra = c.hra; row.ma = c.ma; row.other = c.other;
-            row.daPercent = parseFloat(portalConfigFor(configs, key).da) || row.daPercent;
+            row.daPercent = parseFloat(cfg.da) || row.daPercent;
             row.ptax = c.ptax; row.total = round2(c.gross);
             row.manualDA = true; row.manualPtax = true; row.manualTotal = true; row.macp = false;
+            row.projected = isProj; row.gpf = c.gpf; row.itaxPortal = c.itax;
             gpfTotal += c.gpf;
-            fetched.push(label);
+            (isProj ? projected : fetched).push(label);
         });
-        if (!fetched.length) {
-            st.textContent = 'No salary records for "' + (name || pan) + '" in ' + FY_LABEL + ' found in the Salary Portal.';
-            return;
-        }
         document.querySelector('input[name="entryType"][value="salary"]').checked = true;
         document.getElementById('pensionModeGroup').style.display = 'none';
         updatePensionUI();
         document.getElementById('dGPF').value = Math.round(gpfTotal);
         renderEntriesTable();
-        // Use the portal's actual P.Tax for fetched months (others keep the auto slab) and refresh the tax computation.
+        // Use the portal's P.Tax for all 12 months (actual or projected) and refresh the full-year tax computation.
         document.getElementById('ptaxAutoMode').checked = false;
         document.getElementById('dPTax').readOnly = false;
         document.getElementById('dPTax').value = monthRows.reduce((s, r) => s + (parseFloat(r.ptax) || 0), 0);
-        syncToCalculator();
-        st.innerHTML = '✔ Fetched <b>' + fetched.length + '</b> month(s): ' + fetched.join(', ') + '. GPF (₹' + Math.round(gpfTotal).toLocaleString('en-IN') + ') and P.Tax filled from portal.' +
-            (missing.length ? '<br>⚠ Not found / not saved in portal for: ' + missing.join(', ') + ' (left as auto-filled — review before use).' : '');
+        syncToCalculator(true);
+        renderFetchedTable(true);
+        st.innerHTML = '✔ Fetched <b>' + fetched.length + '</b> month(s) from portal' + (projected.length ? ' · <b style="color:#b7791f;">' + projected.length + ' month(s) projected</b>: ' + projected.join(', ') : '') + '. Full-year gross and income tax are generated below.';
     }
 </script>
 <script>
@@ -1593,12 +1637,12 @@
         document.getElementById('ptaxTotalDisplay').textContent = '₹' + Math.round(ptaxGrand).toLocaleString('en-IN');
     }
 
-    function syncToCalculator() {
+    function syncToCalculator(noScroll) {
         let grand = 0;
         monthRows.forEach(r => { grand += (parseFloat(r.total) || 0); });
         document.getElementById('grossSalary').value = Math.round(grand);
         calculateComprehensiveTax();
-        document.getElementById('grossSalary').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!noScroll) document.getElementById('grossSalary').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     async function loadEntries() {
