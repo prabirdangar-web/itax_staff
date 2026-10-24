@@ -615,8 +615,117 @@
         <span id="grandTotalDisplay">₹0</span>
     </div>
     <button class="btn-calc" onclick="syncToCalculator()">Use Grand Total as Gross Salary &amp; Recalculate</button>
+    <button class="btn-calc" style="background-color:#b7791f;" onclick="fetchFromSalaryPortal()">☁ Fetch Salary of Selected Employee from Salary Portal</button>
+    <div id="portalFetchStatus" class="empty-note" style="text-align:left;"></div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+    // ===== Salary Portal (Firebase project tfhs-portal) — read-only fetch =====
+    let portalDb = null;
+    try {
+        firebase.initializeApp({
+            apiKey: "AIzaSyCiqQFsnbSi6eCgUI_W3NTybzIkRmCI_54",
+            authDomain: "tfhs-portal.firebaseapp.com",
+            projectId: "tfhs-portal",
+            storageBucket: "tfhs-portal.firebasestorage.app",
+            messagingSenderId: "316041012204",
+            appId: "1:316041012204:web:c0b52bc796c5ac173716c9"
+        });
+        portalDb = firebase.firestore();
+    } catch (e) { console.error('Firebase init failed', e); }
+
+    const PORTAL_MONTH_FULL = { Jan:'January', Feb:'February', Mar:'March', Apr:'April', May:'May', Jun:'June', Jul:'July', Aug:'August', Sep:'September', Oct:'October', Nov:'November', Dec:'December' };
+    const PORTAL_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const PORTAL_DEFAULT_CFG = { da: 18, hraMode: 'individual', hraMax: 12000, ma: 500, ptaxMode: 'auto' };
+
+    function portalMonthKey(label) { const [m, y] = label.split('-'); return PORTAL_MONTH_FULL[m] + '-' + y; }
+    function portalMonthIdx(key) { const [m, y] = key.split('-'); return parseInt(y, 10) * 12 + PORTAL_MONTH_NAMES.indexOf(m); }
+
+    // Same carry-forward rule as the portal: use that month's config, else the nearest earlier saved one, else the nearest later, else defaults.
+    function portalConfigFor(configs, key) {
+        if (configs[key]) return Object.assign({}, PORTAL_DEFAULT_CFG, configs[key]);
+        const t = portalMonthIdx(key); let best = null, bi = -Infinity, later = null, li = Infinity;
+        Object.keys(configs).forEach(k => { const i = portalMonthIdx(k); if (i < t && i > bi) { bi = i; best = k; } if (i > t && i < li) { li = i; later = k; } });
+        return Object.assign({}, PORTAL_DEFAULT_CFG, configs[best || later] || {});
+    }
+
+    // Mirrors the portal's getCalculatedStaff() so figures match the Acquittance Roll exactly.
+    function portalCalc(emp, cfg, key) {
+        const basic = parseFloat(emp.basic) || 0, addl = parseFloat(emp.addl) || 0;
+        const da = Math.round(basic * (parseFloat(cfg.da) || 18) / 100);
+        const hraMax = parseFloat(cfg.hraMax) || 12000;
+        let hra = cfg.hraMode === '12' ? Math.round(basic * 12 / 100) : (parseFloat(emp.hra) || 0);
+        if (hra > hraMax) hra = hraMax;
+        const ma = parseFloat(cfg.ma) || 500;
+        const bonus = parseFloat(emp.bonus) || 0, arrear = parseFloat(emp.arrear) || 0;
+        const regular = basic + da + hra + ma + addl;
+        const gross = regular + bonus + arrear;
+        let ptax;
+        if (cfg.ptaxMode === 'auto') {
+            const cutoff = portalMonthIdx('October-2026');
+            if (portalMonthIdx(key) >= cutoff) ptax = regular <= 20000 ? 0 : regular <= 30000 ? 100 : regular <= 50000 ? 140 : regular <= 100000 ? 170 : 208;
+            else ptax = regular <= 10000 ? 0 : regular <= 15000 ? 110 : regular <= 25000 ? 130 : regular <= 40000 ? 150 : 200;
+        } else ptax = parseFloat(emp.ptax) || 0;
+        ptax += parseFloat(emp.addlPtax) || 0;
+        return { basic, da, hra, ma, other: addl + bonus + arrear, gross, ptax, gpf: parseFloat(emp.gpf) || 0, itax: (parseFloat(emp.itax) || 0) + (parseFloat(emp.addlItax) || 0) };
+    }
+
+    async function fetchFromSalaryPortal() {
+        const st = document.getElementById('portalFetchStatus');
+        if (!portalDb) { st.textContent = 'Cloud connection is not available.'; return; }
+        const idx = document.getElementById('empName').value;
+        const manual = document.getElementById('empNameManual').value.trim();
+        const name = (manual || (idx !== '' ? EMPLOYEES[parseInt(idx, 10)].name : '')).toUpperCase().replace(/\s+/g, ' ');
+        const pan = document.getElementById('empPAN').value.trim().toUpperCase();
+        if (!name && !pan) { st.textContent = 'Please select an employee (or enter name / PAN) first.'; return; }
+        st.textContent = 'Fetching from Salary Portal…';
+        let data;
+        try {
+            const snap = await portalDb.collection('tfhs').doc('salaryPortal').get();
+            data = snap.exists ? snap.data() : null;
+        } catch (e) { st.textContent = 'Could not reach the Salary Portal: ' + e.message; return; }
+        if (!data || !data.months) { st.textContent = 'No salary data found in the Salary Portal.'; return; }
+        const configs = data.configs || {};
+        const fetched = [], missing = [];
+        let gpfTotal = 0;
+        FY_MONTHS.forEach((label, i) => {
+            const key = portalMonthKey(label);
+            const staff = data.months[key];
+            if (!Array.isArray(staff)) { missing.push(label); return; }
+            // Match by name first (PAN lists differ between the two apps), then PAN.
+            let emp = staff.find(e => (e.name || '').toUpperCase().replace(/\s+/g, ' ') === name);
+            if (!emp && pan) emp = staff.find(e => (e.pan || '').toUpperCase() === pan);
+            if (!emp) { missing.push(label); return; }
+            const c = portalCalc(emp, portalConfigFor(configs, key), key);
+            const row = monthRows[i];
+            row.type = 'salary';
+            row.basic = c.basic; row.da = c.da; row.hra = c.hra; row.ma = c.ma; row.other = c.other;
+            row.daPercent = parseFloat(portalConfigFor(configs, key).da) || row.daPercent;
+            row.ptax = c.ptax; row.total = round2(c.gross);
+            row.manualDA = true; row.manualPtax = true; row.manualTotal = true; row.macp = false;
+            gpfTotal += c.gpf;
+            fetched.push(label);
+        });
+        if (!fetched.length) {
+            st.textContent = 'No salary records for "' + (name || pan) + '" in ' + FY_LABEL + ' found in the Salary Portal.';
+            return;
+        }
+        document.querySelector('input[name="entryType"][value="salary"]').checked = true;
+        document.getElementById('pensionModeGroup').style.display = 'none';
+        updatePensionUI();
+        document.getElementById('dGPF').value = Math.round(gpfTotal);
+        renderEntriesTable();
+        // Use the portal's actual P.Tax for fetched months (others keep the auto slab) and refresh the tax computation.
+        document.getElementById('ptaxAutoMode').checked = false;
+        document.getElementById('dPTax').readOnly = false;
+        document.getElementById('dPTax').value = monthRows.reduce((s, r) => s + (parseFloat(r.ptax) || 0), 0);
+        syncToCalculator();
+        st.innerHTML = '✔ Fetched <b>' + fetched.length + '</b> month(s): ' + fetched.join(', ') + '. GPF (₹' + Math.round(gpfTotal).toLocaleString('en-IN') + ') and P.Tax filled from portal.' +
+            (missing.length ? '<br>⚠ Not found / not saved in portal for: ' + missing.join(', ') + ' (left as auto-filled — review before use).' : '');
+    }
+</script>
 <script>
     const EMPLOYEES = [
         {name:"PRABIR KUMAR DANGAR", dob:"1969-04-10", pan:"AHGPD9070Q", desig:"HEADMASTER"},
