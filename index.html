@@ -381,6 +381,12 @@
             }
             .btn-print, .btn-calc, .print-btn-row { display: none !important; }
         }
+        .staff-mode .admin-only { display: none !important; }
+        .staff-only { display: none; }
+        .staff-mode .staff-only { display: block; }
+        .staff-gate { border: 1px solid #b7791f; background: #fffaf0; border-radius: 6px; padding: 10px; margin-bottom: 12px; }
+        .staff-mode.staff-verified .staff-gate-form { display: none; }
+        @media print { .staff-gate, .staff-only, #modeToggleRow { display: none !important; } }
     </style>
 </head>
 <body>
@@ -403,7 +409,32 @@
             </select>
         </div>
     </div>
+    <div id="modeToggleRow" class="admin-only" style="font-size:12px;margin-bottom:8px;">
+        <button type="button" class="btn-del" onclick="setStaffMode(true)">👤 Open Staff Self-View</button>
+        <span style="color:#6c757d;">(share link: <b>index.html?staff</b> – staff see only their own data)</span>
+    </div>
 
+    <div class="staff-only staff-gate" id="staffGate">
+        <div class="section-title" style="margin-top:0;">Staff Self-View – verify yourself (any two details)</div>
+        <div class="staff-gate-form">
+            <div class="form-grid">
+                <div class="form-group"><label for="sCrit1">Detail 1</label><select id="sCrit1"></select></div>
+                <div class="form-group"><label for="sVal1">Your entry</label><input type="text" id="sVal1" autocomplete="off"></div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group"><label for="sCrit2">Detail 2</label><select id="sCrit2"></select></div>
+                <div class="form-group"><label for="sVal2">Your entry</label><input type="text" id="sVal2" autocomplete="off" onkeydown="if(event.key==='Enter')staffVerify()"></div>
+            </div>
+            <button type="button" class="btn-calc" onclick="staffVerify()">View My Data</button>
+        </div>
+        <div id="staffGateMsg" style="font-size:12px;margin-top:6px;color:#b91c1c;"></div>
+        <div id="staffWho" style="font-size:13px;font-weight:bold;color:#0f2c59;display:none;">
+            Showing data for: <span id="staffWhoName"></span>
+            <button type="button" class="btn-del" style="margin-left:10px;" onclick="staffExit()">Not me / Exit</button>
+        </div>
+    </div>
+
+    <div class="admin-only">
     <div class="section-title">Salary Portal Access (Firebase Login)</div>
     <div id="portalAuthOut" class="form-grid">
         <div class="form-group"><label for="portalEmail">Admin Email</label><input type="email" id="portalEmail" placeholder="Admin email" autocomplete="username"></div>
@@ -438,10 +469,11 @@
         <span id="empFilterCount" style="font-weight:bold;color:#0f2c59;"></span>
         <button type="button" class="btn-del" style="margin-left:10px;" onclick="clearEmpFilters()">Clear filters</button>
     </div>
+    </div>
 
     <div class="section-title">Employee Details</div>
     <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group admin-only">
             <label for="empName" title="Select employee to auto-fill PAN &amp; DOB from staff data">Employee Name</label>
             <select id="empName" onchange="onEmployeeChange()"></select>
         </div>
@@ -459,7 +491,7 @@
             <label for="empDesig" title="Auto-filled on selecting employee, or type/edit manually">Designation (auto or manual)</label>
             <input type="text" id="empDesig" placeholder="Auto-filled / type manually" onchange="calculateComprehensiveTax()">
         </div>
-        <div class="form-group">
+        <div class="form-group admin-only">
             <label for="empNameManual" title="Overrides the dropdown name on the statement/declaration if filled (for staff not in the list)">Employee Name (manual override)</label>
             <input type="text" id="empNameManual" placeholder="Leave blank to use dropdown name" onchange="calculateComprehensiveTax()">
         </div>
@@ -537,11 +569,12 @@
     
     <button class="btn-calc" onclick="calculateComprehensiveTax()">Calculate Consolidated Tax Liabilities</button>
     
+    <div id="portalFetchStatus" class="empty-note" style="text-align:left;"></div>
     <div class="results-grid" id="resultsBlock"></div>
     <div id="detailedStatements"></div>
 </div>
 
-<div class="calculator-card register-card">
+<div class="calculator-card register-card admin-only">
     <h2 id="regTitle">School Salary / Pension Register (Mar 2026 – Feb 2027)</h2>
 
     <details id="manualRegisterOpts"><summary style="cursor:pointer;font-weight:700;font-size:12px;color:#495057;margin:6px 0 10px;">⚙ Manual / Auto-fill settings (optional — not needed when salary is fetched from portal)</summary>
@@ -660,7 +693,6 @@
     </div>
     <button class="btn-calc" onclick="syncToCalculator()">Use Grand Total as Gross Salary &amp; Recalculate</button>
     <button class="btn-calc" style="background-color:#b7791f;" onclick="fetchFromSalaryPortal()">☁ Fetch Salary of Selected Employee from Salary Portal</button>
-    <div id="portalFetchStatus" class="empty-note" style="text-align:left;"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1002,6 +1034,71 @@
         document.getElementById('fCrit1').innerHTML = opts;
         document.getElementById('fCrit2').innerHTML = opts;
         onFilterCritChange(1); onFilterCritChange(2);
+    }
+
+    // ===== Staff Self-View: staff verify with any two details and see only their own data =====
+    const STAFF_CRITERIA = [
+        {key:'name', label:'Name'},
+        {key:'dob', label:'Date of Birth (DD-MM-YYYY)'},
+        {key:'pan', label:'PAN'},
+        {key:'desig', label:'Designation'},
+        {key:'byear', label:'Birth year'}
+    ];
+    function normTxt(x) { return String(x || '').trim().toUpperCase().replace(/\s+/g, ' '); }
+    function staffFieldMatch(e, key, val) {
+        const v = normTxt(val);
+        if (!v) return false;
+        switch (key) {
+            case 'name': return normTxt(e.name) === v;
+            case 'dob': return formatDOB(e.dob) === v.replace(/[\/.]/g, '-');
+            case 'pan': return normTxt(e.pan) === v;
+            case 'desig': return normTxt(e.desig) === v;
+            case 'byear': return e.dob.slice(0, 4) === v;
+        }
+        return false;
+    }
+    function setStaffMode(on) {
+        document.body.classList.toggle('staff-mode', on);
+        document.body.classList.remove('staff-verified');
+        if (on) staffExit(true);
+    }
+    function staffExit(silent) {
+        document.body.classList.remove('staff-verified');
+        document.getElementById('staffWho').style.display = 'none';
+        ['sVal1', 'sVal2'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('staffGateMsg').textContent = '';
+        document.getElementById('empName').value = '';
+        document.getElementById('empNameManual').value = '';
+        if (!silent) onEmployeeChange();
+    }
+    function staffVerify() {
+        const k1 = document.getElementById('sCrit1').value, k2 = document.getElementById('sCrit2').value;
+        const msg = document.getElementById('staffGateMsg');
+        if (k1 === k2) { msg.textContent = 'Please choose two different details.'; return; }
+        const v1 = document.getElementById('sVal1').value, v2 = document.getElementById('sVal2').value;
+        if (!normTxt(v1) || !normTxt(v2)) { msg.textContent = 'Please fill in both details.'; return; }
+        const hits = [];
+        EMPLOYEES.forEach((e, i) => { if (staffFieldMatch(e, k1, v1) && staffFieldMatch(e, k2, v2)) hits.push(i); });
+        if (hits.length === 0) { msg.textContent = 'No record matches these details. Please check and try again.'; return; }
+        if (hits.length > 1) { msg.textContent = 'These details match more than one person. Please use a more specific pair (e.g. PAN + Date of Birth).'; return; }
+        msg.textContent = '';
+        const select = document.getElementById('empName');
+        select.value = String(hits[0]);
+        document.getElementById('staffWhoName').textContent = EMPLOYEES[hits[0]].name;
+        document.getElementById('staffWho').style.display = 'block';
+        document.body.classList.add('staff-verified');
+        onEmployeeChange();
+    }
+    function initStaffMode() {
+        const opts = STAFF_CRITERIA.map(c => '<option value="' + c.key + '">' + c.label + '</option>').join('');
+        document.getElementById('sCrit1').innerHTML = opts;
+        document.getElementById('sCrit2').innerHTML = opts;
+        document.getElementById('sCrit1').value = 'pan';
+        document.getElementById('sCrit2').value = 'dob';
+        if (/[?&#]staff\b/i.test(location.search + location.hash)) {
+            setStaffMode(true);
+            const t = document.getElementById('modeToggleRow'); if (t) t.remove();
+        }
     }
 
     function onEmployeeChange() {
@@ -1886,6 +1983,7 @@
 
     populateEmployeeOptions();
     initEmpFilters();
+    initStaffMode();
     populatePayLevelOptions();
     populatePayStageOptions();
     onLevelStageChange();
