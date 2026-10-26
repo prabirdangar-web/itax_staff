@@ -398,7 +398,7 @@
 
 <div class="calculator-card">
     <h2 id="mainTitle" style="position:relative;padding-right:46px;">Income Tax & Capital Gains Calculator (FY 2026-27 / AY 2027-28)
-        <button id="topFetchBtn" onclick="fetchFromSalaryPortal(false, true)" title="Fetch salary from Salary Portal (refresh)" style="position:absolute;right:0;top:-4px;width:36px;height:36px;border:none;border-radius:50%;background:#b7791f;color:#fff;font-size:18px;cursor:pointer;">☁</button>
+        <button id="topFetchBtn" class="admin-only" onclick="fetchFromSalaryPortal(false, true)" title="Fetch salary from Salary Portal (refresh)" style="position:absolute;right:0;top:-4px;width:36px;height:36px;border:none;border-radius:50%;background:#b7791f;color:#fff;font-size:18px;cursor:pointer;">☁</button>
     </h2>
     <div class="form-grid">
         <div class="form-group">
@@ -412,6 +412,10 @@
     <div id="modeToggleRow" class="admin-only" style="font-size:12px;margin-bottom:8px;">
         <button type="button" class="btn-del" onclick="setStaffMode(true)">👤 Open Staff Self-View</button>
         <span style="color:#6c757d;">(share link: <b>index.html?staff</b> – staff see only their own data)</span>
+        <div style="margin-top:6px;">
+            <button type="button" class="btn-calc" style="background-color:#b7791f;margin-top:0;" onclick="generateStaffCopy()">🔐 Generate Staff Copy (with salary data)</button>
+            <div id="staffGenMsg" style="color:#6c757d;margin-top:4px;">Log in as admin first. The downloaded index.html carries each person's salary data locked; it opens only after that person enters two of their own details.</div>
+        </div>
     </div>
 
     <div class="staff-only staff-gate" id="staffGate">
@@ -695,6 +699,7 @@
     <button class="btn-calc" style="background-color:#b7791f;" onclick="fetchFromSalaryPortal()">☁ Fetch Salary of Selected Employee from Salary Portal</button>
 </div>
 
+<script id="staffPack" type="application/json">null</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -797,6 +802,10 @@
     function portalAutoFetch() { fetchFromSalaryPortal(true, false); }
     async function fetchFromSalaryPortal(silent, force) {
         const st = document.getElementById('portalFetchStatus');
+        if (document.body.classList.contains('staff-mode')) {
+            force = false;
+            if (!portalDataCache) { st.textContent = '⚠ Salary data is not available in this copy. Please ask the Headmaster for the latest staff copy.'; return; }
+        }
         if (!portalDb) { st.textContent = 'Cloud connection is not available.'; return; }
         const idx = document.getElementById('empName').value;
         const manual = document.getElementById('empNameManual').value.trim();
@@ -1067,11 +1076,12 @@
         document.getElementById('staffWho').style.display = 'none';
         ['sVal1', 'sVal2'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('staffGateMsg').textContent = '';
+        if (getStaffPack()) portalDataCache = null;
         document.getElementById('empName').value = '';
         document.getElementById('empNameManual').value = '';
         if (!silent) onEmployeeChange();
     }
-    function staffVerify() {
+    async function staffVerify() {
         const k1 = document.getElementById('sCrit1').value, k2 = document.getElementById('sCrit2').value;
         const msg = document.getElementById('staffGateMsg');
         if (k1 === k2) { msg.textContent = 'Please choose two different details.'; return; }
@@ -1082,6 +1092,10 @@
         if (hits.length === 0) { msg.textContent = 'No record matches these details. Please check and try again.'; return; }
         if (hits.length > 1) { msg.textContent = 'These details match more than one person. Please use a more specific pair (e.g. PAN + Date of Birth).'; return; }
         msg.textContent = '';
+        if (getStaffPack()) {
+            try { await staffUnlock(hits[0], k1, v1, k2, v2); }
+            catch (err) { msg.textContent = 'Could not unlock your salary data from this copy. Please ask the Headmaster for the latest staff copy.'; return; }
+        }
         const select = document.getElementById('empName');
         select.value = String(hits[0]);
         document.getElementById('staffWhoName').textContent = EMPLOYEES[hits[0]].name;
@@ -1095,9 +1109,104 @@
         document.getElementById('sCrit2').innerHTML = opts;
         document.getElementById('sCrit1').value = 'pan';
         document.getElementById('sCrit2').value = 'dob';
-        if (/[?&#]staff\b/i.test(location.search + location.hash)) {
+        if (getStaffPack() || /[?&#]staff\b/i.test(location.search + location.hash)) {
             setStaffMode(true);
             const t = document.getElementById('modeToggleRow'); if (t) t.remove();
+        }
+    }
+
+    // ===== Staff copy: per-employee salary data locked with that employee's own two details =====
+    const PAIR_KEYS = ['name', 'dob', 'pan', 'desig', 'byear'];
+    const PBKDF_ITER = 60000;
+    let _staffPack;
+    function getStaffPack() {
+        if (_staffPack === undefined) {
+            try { _staffPack = JSON.parse(document.getElementById('staffPack').textContent); } catch (e) { _staffPack = null; }
+        }
+        return _staffPack;
+    }
+    function toB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); }
+    function fromB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+    function empCanon(e, key) {
+        switch (key) {
+            case 'name': return normTxt(e.name);
+            case 'dob': return formatDOB(e.dob);
+            case 'pan': return normTxt(e.pan);
+            case 'desig': return normTxt(e.desig);
+            case 'byear': return e.dob.slice(0, 4);
+        }
+    }
+    function typedCanon(key, val) { let v = normTxt(val); if (key === 'dob') v = v.replace(/[\/.]/g, '-'); return v; }
+    async function deriveWrapKey(salt, keys, vals) {
+        const pw = new TextEncoder().encode(keys.map((k, i) => k + '=' + vals[i]).join('|'));
+        const base = await crypto.subtle.importKey('raw', pw, 'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey({name: 'PBKDF2', salt: salt, iterations: PBKDF_ITER, hash: 'SHA-256'}, base, {name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+    }
+    async function aesEnc(key, bytes) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = new Uint8Array(await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, bytes));
+        return {iv: toB64(iv), ct: toB64(ct)};
+    }
+    async function aesDec(key, o) { return new Uint8Array(await crypto.subtle.decrypt({name: 'AES-GCM', iv: fromB64(o.iv)}, key, fromB64(o.ct))); }
+
+    async function staffUnlock(idx, k1, v1, k2, v2) {
+        const pack = getStaffPack(), rec = pack.emps[idx];
+        const pair = [[k1, typedCanon(k1, v1)], [k2, typedCanon(k2, v2)]].sort((a, b) => a[0] < b[0] ? -1 : 1);
+        const wk = await deriveWrapKey(fromB64(rec.salt), pair.map(x => x[0]), pair.map(x => x[1]));
+        const raw = await aesDec(wk, rec.wraps[pair.map(x => x[0]).join('+')]);
+        const dk = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+        const plain = await aesDec(dk, rec.data);
+        portalDataCache = JSON.parse(new TextDecoder().decode(plain));
+    }
+
+    async function generateStaffCopy() {
+        const msg = document.getElementById('staffGenMsg');
+        const PH = '<script id="staffPack" type="application/json">null</' + 'script>';
+        try {
+            if (!window.crypto || !crypto.subtle) throw new Error('Secure browser crypto is not available (open the page over https).');
+            msg.textContent = 'Reading salary data from the portal…';
+            const snap = await portalDb.collection('tfhs').doc('salaryPortal').get();
+            if (!snap.exists) throw new Error('No salary data found in the portal.');
+            const data = snap.data();
+            msg.textContent = 'Reading this page’s source…';
+            const src = await (await fetch(location.href.split('#')[0].split('?')[0], {cache: 'no-store'})).text();
+            if (!src.includes(PH)) throw new Error('Open the page from its web link (not a saved copy) so the staff copy can be built.');
+            const pairs = [];
+            for (let i = 0; i < PAIR_KEYS.length; i++) for (let j = i + 1; j < PAIR_KEYS.length; j++) pairs.push([PAIR_KEYS[i], PAIR_KEYS[j]].sort());
+            const pack = {v: 1, emps: []};
+            for (let n = 0; n < EMPLOYEES.length; n++) {
+                const e = EMPLOYEES[n];
+                msg.textContent = 'Locking data… ' + (n + 1) + ' / ' + EMPLOYEES.length;
+                const nm = normTxt(e.name), pn = normTxt(e.pan);
+                const months = {};
+                Object.keys(data.months || {}).forEach(k => {
+                    const arr = data.months[k];
+                    if (!Array.isArray(arr)) return;
+                    let rec = arr.find(x => normTxt(x.name) === nm);
+                    if (!rec && pn) rec = arr.find(x => normTxt(x.pan) === pn);
+                    months[k] = rec ? [rec] : [];
+                });
+                const blob = new TextEncoder().encode(JSON.stringify({months, configs: data.configs || {}}));
+                const rawKey = crypto.getRandomValues(new Uint8Array(32));
+                const dk = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['encrypt']);
+                const salt = crypto.getRandomValues(new Uint8Array(16));
+                const entry = {salt: toB64(salt), data: await aesEnc(dk, blob), wraps: {}};
+                for (const pr of pairs) {
+                    const wk = await deriveWrapKey(salt, pr, pr.map(k => empCanon(e, k)));
+                    entry.wraps[pr.join('+')] = await aesEnc(wk, rawKey);
+                }
+                pack.emps.push(entry);
+            }
+            const out = src.replace(PH, () => '<script id="staffPack" type="application/json">' + JSON.stringify(pack) + '</' + 'script>');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([out], {type: 'text/html'}));
+            a.download = 'index.html';
+            document.body.appendChild(a); a.click(); a.remove();
+            msg.style.color = '#28a745';
+            msg.textContent = '✔ Staff copy downloaded as index.html. Upload it in place of the current file; staff open it with ?staff.';
+        } catch (err) {
+            msg.style.color = '#b91c1c';
+            msg.textContent = (err && err.code === 'permission-denied') ? 'Please log in with the admin email & password first.' : 'Could not build staff copy: ' + err.message;
         }
     }
 
