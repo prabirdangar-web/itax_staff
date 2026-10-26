@@ -413,6 +413,32 @@
     <div id="portalAuthIn" style="display:none;font-size:12px;margin-bottom:10px;">✅ Logged in as <b id="portalAuthUser"></b> <button class="btn-del" style="margin-left:10px;" onclick="portalLogout()">Logout</button></div>
     <div id="portalAuthMsg" style="color:#b91c1c;font-size:11px;"></div>
 
+    <div class="section-title">Individual View – Filter Employees (any two criteria)</div>
+    <div class="form-grid" id="empFilterGrid">
+        <div class="form-group">
+            <label for="fCrit1">Criterion 1</label>
+            <select id="fCrit1" onchange="onFilterCritChange(1)"></select>
+        </div>
+        <div class="form-group">
+            <label for="fVal1">Value 1</label>
+            <span id="fValWrap1" style="display:block;"></span>
+        </div>
+    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="fCrit2">Criterion 2</label>
+            <select id="fCrit2" onchange="onFilterCritChange(2)"></select>
+        </div>
+        <div class="form-group">
+            <label for="fVal2">Value 2</label>
+            <span id="fValWrap2" style="display:block;"></span>
+        </div>
+    </div>
+    <div style="font-size:12px;margin-bottom:8px;">
+        <span id="empFilterCount" style="font-weight:bold;color:#0f2c59;"></span>
+        <button type="button" class="btn-del" style="margin-left:10px;" onclick="clearEmpFilters()">Clear filters</button>
+    </div>
+
     <div class="section-title">Employee Details</div>
     <div class="form-grid">
         <div class="form-group">
@@ -888,6 +914,94 @@
         const select = document.getElementById('empName');
         select.innerHTML = '<option value="">-- Select Employee --</option>' +
             EMPLOYEES.map((e, i) => `<option value="${i}">${e.name}</option>`).join('');
+    }
+
+
+    // ===== Individual View: filter employees by any two criteria (AND) =====
+    const FILTER_CRITERIA = [
+        {key:'', label:'-- None --'},
+        {key:'name', label:'Name (contains)', type:'text'},
+        {key:'desig', label:'Designation', type:'select'},
+        {key:'age', label:'Age group', type:'select'},
+        {key:'byear', label:'Birth year', type:'text'},
+        {key:'bmonth', label:'Birth month', type:'select'},
+        {key:'retyear', label:'Retirement year (age 60)', type:'text'},
+        {key:'pan', label:'PAN status', type:'select'},
+        {key:'panText', label:'PAN (contains)', type:'text'}
+    ];
+    const AGE_GROUPS = [['<30','Below 30'],['30-39','30 – 39'],['40-49','40 – 49'],['50-59','50 – 59'],['60+','60 and above']];
+    const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    function empAge(e) {
+        const b = new Date(e.dob), t = new Date();
+        let a = t.getFullYear() - b.getFullYear();
+        if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--;
+        return a;
+    }
+    function filterValueOptions(key) {
+        if (key === 'desig') return [...new Set(EMPLOYEES.map(e => e.desig))].sort().map(d => [d, d]);
+        if (key === 'age') return AGE_GROUPS;
+        if (key === 'bmonth') return MONTHS_FULL.map((m, i) => [String(i + 1), m]);
+        if (key === 'pan') return [['has', 'PAN available'], ['missing', 'PAN missing']];
+        return [];
+    }
+    function onFilterCritChange(n) {
+        const key = document.getElementById('fCrit' + n).value;
+        const crit = FILTER_CRITERIA.find(c => c.key === key);
+        const wrap = document.getElementById('fValWrap' + n);
+        if (!crit || !key) {
+            wrap.innerHTML = '<input type="text" id="fVal' + n + '" disabled placeholder="—">';
+        } else if (crit.type === 'select') {
+            wrap.innerHTML = '<select id="fVal' + n + '" onchange="applyEmpFilters()"><option value="">-- Any --</option>' +
+                filterValueOptions(key).map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select>';
+        } else {
+            wrap.innerHTML = '<input type="text" id="fVal' + n + '" placeholder="Type to filter" oninput="applyEmpFilters()">';
+        }
+        applyEmpFilters();
+    }
+    function empMatches(e, key, val) {
+        if (!key || val === '' || val == null) return true;
+        const v = String(val).trim().toLowerCase();
+        switch (key) {
+            case 'name': return e.name.toLowerCase().includes(v);
+            case 'desig': return e.desig === val;
+            case 'age': {
+                const a = empAge(e);
+                if (val === '<30') return a < 30;
+                if (val === '60+') return a >= 60;
+                const [lo, hi] = val.split('-').map(Number); return a >= lo && a <= hi;
+            }
+            case 'byear': return e.dob.slice(0, 4) === v;
+            case 'bmonth': return parseInt(e.dob.slice(5, 7), 10) === parseInt(val, 10);
+            case 'retyear': return String(parseInt(e.dob.slice(0, 4), 10) + 60) === v;
+            case 'pan': return val === 'has' ? !!(e.pan && e.pan.trim()) : !(e.pan && e.pan.trim());
+            case 'panText': return (e.pan || '').toLowerCase().includes(v);
+        }
+        return true;
+    }
+    function applyEmpFilters() {
+        const k1 = document.getElementById('fCrit1').value, k2 = document.getElementById('fCrit2').value;
+        const v1 = (document.getElementById('fVal1') || {}).value, v2 = (document.getElementById('fVal2') || {}).value;
+        const select = document.getElementById('empName');
+        const prev = select.value;
+        const matches = [];
+        EMPLOYEES.forEach((e, i) => { if (empMatches(e, k1, v1) && empMatches(e, k2, v2)) matches.push(i); });
+        select.innerHTML = '<option value="">-- Select Employee --</option>' +
+            matches.map(i => '<option value="' + i + '">' + EMPLOYEES[i].name + ' (' + EMPLOYEES[i].desig + ')</option>').join('');
+        if (prev !== '' && matches.includes(parseInt(prev, 10))) select.value = prev;
+        else if (matches.length === 1 && (k1 || k2)) { select.value = String(matches[0]); onEmployeeChange(); }
+        else if (prev !== '') { select.value = ''; onEmployeeChange(); }
+        document.getElementById('empFilterCount').textContent = matches.length + ' of ' + EMPLOYEES.length + ' employees match';
+    }
+    function clearEmpFilters() {
+        document.getElementById('fCrit1').value = ''; document.getElementById('fCrit2').value = '';
+        onFilterCritChange(1); onFilterCritChange(2);
+    }
+    function initEmpFilters() {
+        const opts = FILTER_CRITERIA.map(c => '<option value="' + c.key + '">' + c.label + '</option>').join('');
+        document.getElementById('fCrit1').innerHTML = opts;
+        document.getElementById('fCrit2').innerHTML = opts;
+        onFilterCritChange(1); onFilterCritChange(2);
     }
 
     function onEmployeeChange() {
@@ -1771,6 +1885,7 @@
     }
 
     populateEmployeeOptions();
+    initEmpFilters();
     populatePayLevelOptions();
     populatePayStageOptions();
     onLevelStageChange();
